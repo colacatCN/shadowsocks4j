@@ -1,10 +1,11 @@
-local:
-  port: 10727
+shadowsocks4j:
+  local:
+    port: 10727
 
-server:
-  hostname: 127.0.0.1
-  port: 10728
+  remote:
+    ip: 127.0.0.1
+    port: 10728
 
-cipher:
-  password: 123456
-  method: AES_128_GCM
+  cipher:
+    password: 123456
+    method: AES_128_GCM
