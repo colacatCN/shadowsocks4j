@@ -13,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class Shadowsocks4jConfigTest extends Shadowsocks4jApplicationTest {
 
     @Autowired
-    private Shadowsocks4jLocalConfig localConfig;
+    private Shadowsocks4jConfig shadowsocks4jConfig;
 
     @Test
     public void test() {
-        log.info("localConfig = {}", localConfig);
+        log.info("config = {}", shadowsocks4jConfig);
     }
 
 }

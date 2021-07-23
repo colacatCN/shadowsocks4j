@@ -1,8 +1,12 @@
 shadowsocks4j:
-  local:
+
+  name: leo
+
+  local-server:
+    ip: 127.0.0.1
     port: 10727
 
-  remote:
+  remote-server:
     ip: 127.0.0.1
     port: 10728
 

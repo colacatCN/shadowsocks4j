@@ -8,11 +8,15 @@ import org.springframework.context.annotation.Configuration;
  * @author zhouke
  * @date 2021/06/16
  */
-@ConfigurationProperties(prefix = "shadowsocks4j.local")
+@ConfigurationProperties(prefix = "shadowsocks4j")
 @Configuration
 @Data
-public class Shadowsocks4jLocalConfig {
+public class Shadowsocks4jConfig {
 
-    private int port;
+    private ServerConfig localServer;
+
+    private ServerConfig remoteServer;
+
+    private CipherConfig cipher;
 
 }
