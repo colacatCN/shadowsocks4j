@@ -1,14 +1,12 @@
 package com.life4ever.shadowsocks4j.service.impl;
 
+import com.life4ever.shadowsocks4j.handler.local.LocalServerChannelInitializer;
 import com.life4ever.shadowsocks4j.service.AbstractShadowsocks4jService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.springframework.stereotype.Service;
 
@@ -47,14 +45,7 @@ public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService 
         ServerBootstrap serverBootstrap = serverBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-
-                    @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        ChannelPipeline pipeline = socketChannel.pipeline();
-                    }
-
-                });
+                .childHandler(new LocalServerChannelInitializer());
         return serverBootstrap.bind(publishSocketAddress);
     }
 

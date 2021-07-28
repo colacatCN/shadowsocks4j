@@ -1,10 +1,10 @@
 local-server:
   ip: 127.0.0.1
-  port: 10727
+  port: 10721
 
 remote-server:
   ip: 127.0.0.1
-  port: 10728
+  port: 10727
 
 cipher:
   password: 123456
