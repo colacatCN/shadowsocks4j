@@ -1,6 +1,11 @@
+# IDEA
 .idea
 *.iml
-out
-gen
 *.log
 target/
+
+# VS Code
+.classpath
+.factorypath
+.project
+org.eclipse.*
