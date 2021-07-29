@@ -17,14 +17,14 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalToRemoteHandler.class);
 
-    private final ChannelFuture channelFuture;
+    private final ChannelFuture localServerChannelFuture;
 
     private final Socks5CommandRequest socks5CommandRequest;
 
     private boolean isInitOk = false;
 
-    public LocalToRemoteHandler(ChannelFuture channelFuture, Socks5CommandRequest socks5CommandRequest) {
-        this.channelFuture = channelFuture;
+    public LocalToRemoteHandler(ChannelFuture localServerChannelFuture, Socks5CommandRequest socks5CommandRequest) {
+        this.localServerChannelFuture = localServerChannelFuture;
         this.socks5CommandRequest = socks5CommandRequest;
     }
 
@@ -37,7 +37,7 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
             byteBuf = byteBufWithTargetAddress;
             isInitOk = true;
         }
-        ctx.writeAndFlush(byteBuf);
+        localServerChannelFuture.channel().writeAndFlush(byteBuf);
     }
 
     private ByteBuf parseSocks5CommandRequest(Socks5CommandRequest socks5CommandRequest) {

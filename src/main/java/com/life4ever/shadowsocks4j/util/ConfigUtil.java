@@ -28,6 +28,9 @@ public class ConfigUtil {
         }
     }
 
+    private ConfigUtil() {
+    }
+
     public static InetSocketAddress getLocalServerInetSocketAddress() {
         ServerConfig localServerConfig = SHADOWSOCKS_CONFIG.getLocalServerConfig();
         return new InetSocketAddress(localServerConfig.getIp(), localServerConfig.getPort());

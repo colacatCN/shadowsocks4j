@@ -27,12 +27,12 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     private EventLoopGroup workerGroup;
 
-    public AbstractShadowsocks4jService(SocketAddress publishSocketAddress, int numOfWorkers) {
+    protected AbstractShadowsocks4jService(SocketAddress publishSocketAddress, int numOfWorkers) {
         this.publishSocketAddress = publishSocketAddress;
         this.numOfWorkers = numOfWorkers;
     }
 
-    public AbstractShadowsocks4jService(SocketAddress publishSocketAddress) {
+    protected AbstractShadowsocks4jService(SocketAddress publishSocketAddress) {
         this(publishSocketAddress, AVAILABLE_PROCESSORS << 1);
     }
 
