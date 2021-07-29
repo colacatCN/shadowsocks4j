@@ -2,10 +2,4 @@
 .idea
 *.iml
 *.log
-target/
-
-# VS Code
-.classpath
-.factorypath
-.project
-org.eclipse.*
+target

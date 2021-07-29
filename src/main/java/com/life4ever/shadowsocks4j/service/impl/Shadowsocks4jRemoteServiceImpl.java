@@ -1,6 +1,6 @@
 package com.life4ever.shadowsocks4j.service.impl;
 
-import com.life4ever.shadowsocks4j.handler.local.LocalServerChannelInitializer;
+import com.life4ever.shadowsocks4j.handler.remote.RemoteServerChannelInitializer;
 import com.life4ever.shadowsocks4j.service.AbstractShadowsocks4jService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -13,13 +13,11 @@ import org.springframework.stereotype.Service;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
-import static com.life4ever.shadowsocks4j.util.ConfigUtil.getLocalServerInetSocketAddress;
+@Service("remote")
+public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
-@Service("local")
-public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService {
-
-    public Shadowsocks4jLocalServiceImpl() {
-        super(getLocalServerInetSocketAddress());
+    public Shadowsocks4jRemoteServiceImpl(SocketAddress publishSocketAddress, int numOfWorkers) {
+        super(publishSocketAddress, numOfWorkers);
         this.initialize();
     }
 
@@ -45,7 +43,7 @@ public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService 
         ServerBootstrap serverBootstrap = serverBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new LocalServerChannelInitializer());
+                .childHandler(new RemoteServerChannelInitializer());
         return serverBootstrap.bind(publishSocketAddress);
     }
 

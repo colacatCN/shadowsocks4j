@@ -8,12 +8,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.NetUtil;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 
-@Slf4j
 public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LocalToRemoteHandler.class);
 
     private final ChannelFuture channelFuture;
 
@@ -29,20 +31,22 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf byteBuf = (ByteBuf) msg;
-        ByteBuf byteBufWithTargetAddress = Unpooled.buffer();
         if (!isInitOk) {
-            byteBufWithTargetAddress.writeBytes(parseSocks5CommandRequest(socks5CommandRequest));
+            ByteBuf byteBufWithTargetAddress = parseSocks5CommandRequest(socks5CommandRequest);
             byteBufWithTargetAddress.writeBytes(byteBuf);
+            byteBuf = byteBufWithTargetAddress;
             isInitOk = true;
         }
+        ctx.writeAndFlush(byteBuf);
     }
 
     private ByteBuf parseSocks5CommandRequest(Socks5CommandRequest socks5CommandRequest) {
-        ByteBuf byteBuf = Unpooled.buffer();
-
         Socks5AddressType socks5AddressType = socks5CommandRequest.dstAddrType();
         String host = socks5CommandRequest.dstAddr();
         int port = socks5CommandRequest.dstPort();
+        LOG.info("socks5AddressType = {}, host = {}, port = {}", socks5AddressType, host, port);
+
+        ByteBuf byteBuf = Unpooled.buffer();
         if (Socks5AddressType.IPv4.equals(socks5AddressType)) {
             byteBuf.writeByte(0x01);
             byte[] ipv4AddressBytes = NetUtil.createByteArrayFromIpAddressString(host);
@@ -54,10 +58,9 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
         } else {
             byteBuf.writeByte(0x03);
             byte[] hostnameBytes = host.getBytes(StandardCharsets.UTF_8);
-            byteBuf.writeByte(hostnameBytes.length);
+            byteBuf.writeShort(hostnameBytes.length);
             byteBuf.writeBytes(hostnameBytes);
         }
-
         byteBuf.writeShort(port);
         return byteBuf;
     }

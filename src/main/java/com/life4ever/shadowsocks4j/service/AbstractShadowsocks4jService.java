@@ -5,13 +5,15 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
-@Slf4j
 public abstract class AbstractShadowsocks4jService implements IShadowsocks4jService {
+
+    protected final Logger LOG = LoggerFactory.getLogger(getClass());
 
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
