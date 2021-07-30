@@ -54,7 +54,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
                     if (channelFuture.isSuccess()) {
-                        LOG.info("已成功连接 remote-server");
+                        LOG.info("成功连接 remote-server");
                         ChannelPipeline pipeline = ctx.channel().pipeline();
                         pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);

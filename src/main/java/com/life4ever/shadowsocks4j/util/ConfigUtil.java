@@ -2,6 +2,7 @@ package com.life4ever.shadowsocks4j.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.life4ever.shadowsocks4j.config.CipherConfig;
 import com.life4ever.shadowsocks4j.config.ServerConfig;
 import com.life4ever.shadowsocks4j.config.ShadowsocksConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,10 @@ public class ConfigUtil {
     public static InetSocketAddress getRemoteServerInetSocketAddress() {
         ServerConfig remoteServerConfig = SHADOWSOCKS_CONFIG.getRemoteServerConfig();
         return new InetSocketAddress(remoteServerConfig.getIp(), remoteServerConfig.getPort());
+    }
+
+    public static CipherConfig getCipherConfig() {
+        return SHADOWSOCKS_CONFIG.getCipherConfig();
     }
 
     private static ShadowsocksConfig loadShadowsocksConfig() throws IOException {

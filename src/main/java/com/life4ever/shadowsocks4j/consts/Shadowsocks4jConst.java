@@ -10,4 +10,8 @@ public class Shadowsocks4jConst {
 
     public static final String APPLICATION_CONFIG_FILE_NAME = "application.yml";
 
+    public static final int IPV4_ADDRESS_BYTE_LENGTH = 4;
+
+    public static final int IPV6_ADDRESS_BYTE_LENGTH = 32;
+
 }
