@@ -13,11 +13,13 @@ import org.springframework.stereotype.Service;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
+import static com.life4ever.shadowsocks4j.util.ConfigUtil.getRemoteServerInetSocketAddress;
+
 @Service("remote")
 public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
-    public Shadowsocks4jRemoteServiceImpl(SocketAddress publishSocketAddress, int numOfWorkers) {
-        super(publishSocketAddress, numOfWorkers);
+    public Shadowsocks4jRemoteServiceImpl() {
+        super(getRemoteServerInetSocketAddress());
         this.initialize();
     }
 
