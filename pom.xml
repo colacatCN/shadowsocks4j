@@ -10,6 +10,12 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <modules>
+        <module>shadowsocks4j-proxy</module>
+        <module>shadowsocks4j-cipher</module>
+        <module>shadowsocks4j-web</module>
+    </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
@@ -21,12 +27,6 @@
         <lombok.version>1.18.12</lombok.version>
         <junit.version>4.12</junit.version>
     </properties>
-
-    <modules>
-        <module>shadowsocks4j-proxy</module>
-        <module>shadowsocks4j-cipher</module>
-        <module>shadowsocks4j-web</module>
-    </modules>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
@@ -70,6 +70,13 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
         <dependency>

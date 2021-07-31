@@ -53,9 +53,11 @@ public class Shadowsocks4jServerTest {
                 });
         try {
             ChannelFuture channelFuture = serverBootstrap.bind("127.0.0.1", 10728).sync();
+            LOG.info("成功启动 Shadowsocks4jServer");
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            LOG.error("无法启动 Shadowsocks4jServer");
             LOG.error(e.getMessage(), e);
         } finally {
             bossGroup.shutdownGracefully();
