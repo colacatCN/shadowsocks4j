@@ -1,0 +1,9 @@
+local-server:
+  ip: 127.0.0.1
+  port: 10721
+remote-server:
+  ip: 127.0.0.1
+  port: 10727
+cipher:
+  password: 123456
+  method: aes_128_gcm
