@@ -10,6 +10,10 @@ public class Shadowsocks4jProxyConst {
 
     public static final String DEFAULT_CIPHER_METHOD = "aes_128_gcm";
 
+    public static final String LOCAL_SERVER_SERVICE_NAME = "local-server";
+
+    public static final String REMOTE_SERVER_SERVICE_NAME = "remote-server";
+
     public static final int IPV4_ADDRESS_BYTE_LENGTH = 4;
 
     public static final int IPV6_ADDRESS_BYTE_LENGTH = 32;

@@ -2,7 +2,6 @@ package com.life4ever.shadowsocks4j.proxy.service.impl;
 
 import com.life4ever.shadowsocks4j.proxy.handler.remote.RemoteServerChannelInitializer;
 import com.life4ever.shadowsocks4j.proxy.service.AbstractShadowsocks4jService;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -12,12 +11,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.REMOTE_SERVER_SERVICE_NAME;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerInetSocketAddress;
 
 public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jRemoteServiceImpl() {
-        super(getRemoteServerInetSocketAddress());
+        super(REMOTE_SERVER_SERVICE_NAME, getRemoteServerInetSocketAddress());
         this.initialize();
     }
 
@@ -40,11 +40,10 @@ public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService
 
     @Override
     protected ChannelFuture bind(SocketAddress publishSocketAddress) {
-        ServerBootstrap serverBootstrap = serverBootstrap();
-        serverBootstrap
+        return serverBootstrap()
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new RemoteServerChannelInitializer());
-        return serverBootstrap.bind(publishSocketAddress);
+                .childHandler(new RemoteServerChannelInitializer())
+                .bind(publishSocketAddress);
     }
 
 }

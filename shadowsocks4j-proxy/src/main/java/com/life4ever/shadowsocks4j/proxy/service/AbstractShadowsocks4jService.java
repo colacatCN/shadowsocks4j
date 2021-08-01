@@ -17,6 +17,8 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
+    private final String serviceName;
+
     private final SocketAddress publishSocketAddress;
 
     private final int numOfWorkers;
@@ -27,23 +29,28 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     private EventLoopGroup workerGroup;
 
-    protected AbstractShadowsocks4jService(SocketAddress publishSocketAddress, int numOfWorkers) {
+    protected AbstractShadowsocks4jService(String serviceName, SocketAddress publishSocketAddress, int numOfWorkers) {
+        this.serviceName = serviceName;
         this.publishSocketAddress = publishSocketAddress;
         this.numOfWorkers = numOfWorkers;
     }
 
-    protected AbstractShadowsocks4jService(SocketAddress publishSocketAddress) {
-        this(publishSocketAddress, AVAILABLE_PROCESSORS << 1);
+    protected AbstractShadowsocks4jService(String serviceName, SocketAddress publishSocketAddress) {
+        this(serviceName, publishSocketAddress, AVAILABLE_PROCESSORS << 1);
     }
 
     @Override
     public void start() throws Shadowsocks4jProxyException {
         try {
             ChannelFuture channelFuture = bind(publishSocketAddress).sync();
+            LOG.info("Start {} @ {}.", serviceName, publishSocketAddress);
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
+        } finally {
+            shutdownGracefully();
+            LOG.info("Shutdown {} @ {}.", serviceName, publishSocketAddress);
         }
     }
 
@@ -66,10 +73,6 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     protected ServerBootstrap serverBootstrap() {
         return serverBootstrap;
-    }
-
-    protected SocketAddress publishSocketAddress() {
-        return publishSocketAddress;
     }
 
     protected abstract EventLoopGroup initializeEventLoopGroup(int numOfThreads, ThreadFactory threadFactory);
