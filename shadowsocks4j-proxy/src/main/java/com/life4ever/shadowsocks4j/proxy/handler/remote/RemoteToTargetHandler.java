@@ -62,10 +62,10 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
         bootstrap.connect(targetServerInetSocketAddress)
                 .addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
-                        LOG.info("成功连接 target-server");
+                        LOG.info("Succeed to connect to target server @ {}.", targetServerInetSocketAddress);
                         channelAtomicReference.set(future.channel());
                     } else {
-                        LOG.info("无法连接 target-server");
+                        LOG.error("Failed to connect to target server @ {}.", targetServerInetSocketAddress);
                     }
                 });
     }

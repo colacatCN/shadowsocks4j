@@ -44,7 +44,7 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
         Socks5AddressType socks5AddressType = socks5CommandRequest.dstAddrType();
         String host = socks5CommandRequest.dstAddr();
         int port = socks5CommandRequest.dstPort();
-        LOG.info("socks5AddressType = {}, host = {}, port = {}", socks5AddressType, host, port);
+        LOG.info("socks5AddressType = {}, host = {}, port = {}.", socks5AddressType, host, port);
 
         ByteBuf byteBuf = Unpooled.buffer();
         if (Socks5AddressType.IPv4.equals(socks5AddressType)) {

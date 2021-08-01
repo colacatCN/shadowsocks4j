@@ -12,9 +12,15 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
         ChannelPipeline pipeline = channel.pipeline();
+
+        // encoder
         pipeline.addFirst(Socks5ServerEncoder.DEFAULT);
+
+        // init
         pipeline.addLast(new Socks5InitialRequestDecoder());
         pipeline.addLast(new Socks5InitialRequestHandler());
+
+        // command
         pipeline.addLast(new Socks5CommandRequestDecoder());
         pipeline.addLast(new Socks5CommandRequestHandler());
     }

@@ -29,9 +29,6 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) throws Exception {
         if (msg.decoderResult().isSuccess() && Socks5CommandType.CONNECT.equals(msg.type())) {
-            InetSocketAddress inetSocketAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-            String clientIp = inetSocketAddress.getHostName();
-            LOG.info("客户端 IP 地址：{}", clientIp);
             relayToRemoteServer(ctx, msg);
         } else {
             ctx.fireChannelRead(msg);
@@ -52,16 +49,17 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     }
                 });
 
-        bootstrap.connect(getRemoteServerInetSocketAddress())
+        InetSocketAddress remoteServerInetSocketAddress = getRemoteServerInetSocketAddress();
+        bootstrap.connect(remoteServerInetSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
                     if (channelFuture.isSuccess()) {
-                        LOG.info("成功连接 remote-server");
+                        LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
                         ChannelPipeline pipeline = ctx.channel().pipeline();
                         pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
                     } else {
-                        LOG.info("无法连接 remote-server");
+                        LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4);
                     }
                     ctx.writeAndFlush(socks5CommandResponse);
