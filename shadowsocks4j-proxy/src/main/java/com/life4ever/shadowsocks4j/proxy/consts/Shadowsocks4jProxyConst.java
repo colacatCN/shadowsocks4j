@@ -14,4 +14,7 @@ public class Shadowsocks4jProxyConst {
 
     public static final int IPV6_ADDRESS_BYTE_LENGTH = 32;
 
+    private Shadowsocks4jProxyConst() {
+    }
+
 }

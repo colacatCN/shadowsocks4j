@@ -23,8 +23,6 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
 
     private final InetSocketAddress targetServerInetSocketAddress;
 
-    private Channel channel;
-
     private final AtomicReference<Channel> channelAtomicReference;
 
     public RemoteToTargetHandler(InetSocketAddress targetServerInetSocketAddress, ChannelHandlerContext localChannelHandlerContext) {
@@ -70,7 +68,6 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
                         LOG.info("无法连接 target-server");
                     }
                 });
-
     }
 
 }

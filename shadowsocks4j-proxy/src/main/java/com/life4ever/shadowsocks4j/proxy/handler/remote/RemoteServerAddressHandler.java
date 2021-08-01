@@ -21,13 +21,12 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf = (ByteBuf) msg;
 
         // 解密
-        byte[] bytes = ByteBufUtil.getBytes(byteBuf);
-        byte[] decryptedBytes = decrypt(bytes);
+        byte[] decryptedBytes = decrypt(ByteBufUtil.getBytes(byteBuf));
 
         // 解析
         ByteBuf decryptedByteBuf = Unpooled.buffer();
         decryptedByteBuf.writeBytes(decryptedBytes);
-        String host = parseHost(decryptedByteBuf);
+        String host = parseHostString(decryptedByteBuf);
         int port = decryptedByteBuf.readShort();
 
         // 交由 RemoteToTargetHandler 处理
@@ -36,7 +35,7 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         ctx.fireChannelRead(decryptedByteBuf);
     }
 
-    private String parseHost(ByteBuf byteBuf) {
+    private String parseHostString(ByteBuf byteBuf) {
         String host;
         byte socks5AddressType = byteBuf.readByte();
         if (Socks5AddressType.IPv4.byteValue() == socks5AddressType) {
