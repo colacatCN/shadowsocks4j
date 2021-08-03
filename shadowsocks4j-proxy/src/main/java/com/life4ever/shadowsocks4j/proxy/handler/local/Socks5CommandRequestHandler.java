@@ -1,7 +1,9 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
+import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -22,31 +24,47 @@ import java.net.InetSocketAddress;
 
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerInetSocketAddress;
 
+@ChannelHandler.Sharable
 public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
+    private Socks5CommandRequestHandler() {
+    }
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) throws Exception {
-        if (msg.decoderResult().isSuccess() && Socks5CommandType.CONNECT.equals(msg.type())) {
-            relayToRemoteServer(ctx, msg);
-        } else {
-            ctx.fireChannelRead(msg);
+        if (!msg.decoderResult().isSuccess()) {
+            throw new Shadowsocks4jProxyException("SOCKS protocol version is not 5.");
         }
+
+        if (!Socks5CommandType.CONNECT.equals(msg.type())) {
+            throw new Shadowsocks4jProxyException("SOCKS command type is not CONNECT.");
+        }
+
+        relayToRemoteServer(ctx, msg);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        LOG.error(cause.getMessage(), cause);
+        ctx.close();
     }
 
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         Bootstrap bootstrap = new Bootstrap();
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup(1);
 
         bootstrap.group(workerGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
+
                     @Override
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
                         pipeline.addLast(new RemoteToLocalHandler(ctx));
                     }
+
                 });
 
         InetSocketAddress remoteServerInetSocketAddress = getRemoteServerInetSocketAddress();
@@ -64,6 +82,16 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     }
                     ctx.writeAndFlush(socks5CommandResponse);
                 });
+    }
+
+    public static Socks5CommandRequestHandler getInstance() {
+        return Socks5CommandRequestHandlerHolder.INSTANCE;
+    }
+
+    private static class Socks5CommandRequestHandlerHolder {
+
+        private static final Socks5CommandRequestHandler INSTANCE = new Socks5CommandRequestHandler();
+
     }
 
 }

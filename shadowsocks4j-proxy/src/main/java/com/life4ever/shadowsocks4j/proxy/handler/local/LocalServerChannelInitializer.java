@@ -18,11 +18,11 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // init
         pipeline.addLast(new Socks5InitialRequestDecoder());
-        pipeline.addLast(new Socks5InitialRequestHandler());
+        pipeline.addLast(Socks5InitialRequestHandler.getInstance());
 
         // command
         pipeline.addLast(new Socks5CommandRequestDecoder());
-        pipeline.addLast(new Socks5CommandRequestHandler());
+        pipeline.addLast(Socks5CommandRequestHandler.getInstance());
     }
 
 }
