@@ -24,6 +24,7 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequest;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponse;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LOOPBACK_ADDRESS;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerSocketAddress;
 
+@Ignore
 public class Shadowsocks4jClientTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(Shadowsocks4jClientTest.class);
