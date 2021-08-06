@@ -12,12 +12,12 @@ import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LOCAL_SERVER_SERVICE_NAME;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerInetSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerSocketAddress;
 
 public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jLocalServiceImpl() {
-        super(LOCAL_SERVER_SERVICE_NAME, getLocalServerInetSocketAddress());
+        super(LOCAL_SERVER_SERVICE_NAME, getLocalServerSocketAddress());
         this.initialize();
     }
 

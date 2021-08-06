@@ -1,0 +1,25 @@
+{
+    "local-server": {
+        "ip": "127.0.0.1",
+        "port": 10726
+    },
+    "remote-server": {
+        "ip": "127.0.0.1",
+        "port": 10727
+    },
+    "cipher": {
+        "password": 123456,
+        "method": "aes_128_gcm"
+    },
+    "pac": {
+        "enable-pac-mode": true,
+        "system-rule": {
+            "location": "classpath:config/system-rule.yml",
+            "updateUrl": "https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt",
+            "updateInterval": "* * * 1/1 * ?"
+        },
+        "user-rule": {
+            "location": "classpath:config/user-rule.yml"
+        }
+    }
+}

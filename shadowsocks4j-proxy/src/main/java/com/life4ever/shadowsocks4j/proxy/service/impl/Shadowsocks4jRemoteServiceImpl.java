@@ -12,12 +12,12 @@ import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.REMOTE_SERVER_SERVICE_NAME;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerInetSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
 
 public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jRemoteServiceImpl() {
-        super(REMOTE_SERVER_SERVICE_NAME, getRemoteServerInetSocketAddress());
+        super(REMOTE_SERVER_SERVICE_NAME, getRemoteServerSocketAddress());
         this.initialize();
     }
 

@@ -32,7 +32,7 @@ public class Socks5InitialRequestHandler extends SimpleChannelInboundHandler<Def
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOG.error(cause.getMessage(), cause);
-        ctx.close();
+        ctx.channel().close();
     }
 
     public static Socks5InitialRequestHandler getInstance() {

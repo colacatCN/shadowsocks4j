@@ -20,14 +20,16 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerInetSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
 
 @ChannelHandler.Sharable
 public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
+
+    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
     private Socks5CommandRequestHandler() {
     }
@@ -48,12 +50,11 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         LOG.error(cause.getMessage(), cause);
-        ctx.close();
+        ctx.channel().close();
     }
 
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         Bootstrap bootstrap = new Bootstrap();
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup(1);
 
         bootstrap.group(workerGroup)
                 .channel(NioSocketChannel.class)
@@ -67,7 +68,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
                 });
 
-        InetSocketAddress remoteServerInetSocketAddress = getRemoteServerInetSocketAddress();
+        SocketAddress remoteServerInetSocketAddress = getRemoteServerSocketAddress();
         bootstrap.connect(remoteServerInetSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;

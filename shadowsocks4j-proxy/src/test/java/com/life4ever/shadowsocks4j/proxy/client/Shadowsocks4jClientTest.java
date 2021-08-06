@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LOOPBACK_ADDRESS;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerInetSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerSocketAddress;
 
 public class Shadowsocks4jClientTest {
 
@@ -71,7 +71,7 @@ public class Shadowsocks4jClientTest {
 
                 });
 
-        bootstrap.connect(getLocalServerInetSocketAddress())
+        bootstrap.connect(getLocalServerSocketAddress())
                 .addListener((ChannelFutureListener) future -> {
                     if (future.isSuccess()) {
                         LOG.info("成功连接 local-server");
