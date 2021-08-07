@@ -6,12 +6,12 @@ public class RuleConfig {
 
     private String updateUrl;
 
-    private String updateInterval;
+    private Long updateInterval;
 
     public RuleConfig() {
     }
 
-    public RuleConfig(String location, String updateUrl, String updateInterval) {
+    public RuleConfig(String location, String updateUrl, Long updateInterval) {
         this.location = location;
         this.updateUrl = updateUrl;
         this.updateInterval = updateInterval;
@@ -33,11 +33,11 @@ public class RuleConfig {
         this.updateUrl = updateUrl;
     }
 
-    public String getUpdateInterval() {
+    public Long getUpdateInterval() {
         return updateInterval;
     }
 
-    public void setUpdateInterval(String updateInterval) {
+    public void setUpdateInterval(Long updateInterval) {
         this.updateInterval = updateInterval;
     }
 
