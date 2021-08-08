@@ -18,7 +18,7 @@ public class Shadowsocks4jProxyConst {
 
     public static final Long DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL = 60 * 60 * 1000L;
 
-    public static final String FILE_MONITOR_THREAD_NAME = "file-monitor";
+    public static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j FileMonitor";
 
     public static final String LOOPBACK_ADDRESS = "127.0.0.1";
 
