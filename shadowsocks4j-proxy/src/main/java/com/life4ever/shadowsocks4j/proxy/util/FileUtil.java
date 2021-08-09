@@ -100,7 +100,7 @@ public class FileUtil {
                 FileEventCallback fileEventCallback = fileEventCallbackMap.get(fileName);
 
                 if (fileEventCallback == null) {
-                    return;
+                    break;
                 }
 
                 if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {

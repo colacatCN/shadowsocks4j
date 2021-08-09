@@ -7,10 +7,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Matcher;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_FUZZY_FLAG;
 import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_FUZZY_PATTERN;
-import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_PRECISE_FLAG;
 import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_PRECISE_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.WHITE_LIST_START_FLAG;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SYSTEM_RULE_TXT;
@@ -45,16 +44,20 @@ public class SystemRuleFileEventCallbackImpl implements FileEventCallback {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(SYSTEM_RULE_TXT_LOCATION))) {
             String line;
             boolean whiteListStart = false;
+            String domainName;
             while ((line = bufferedReader.readLine()) != null) {
                 if (line.contains(WHITE_LIST_START_FLAG)) {
                     whiteListStart = true;
-                    continue;
                 }
                 if (whiteListStart) {
-                    if (DOMAIN_NAME_PRECISE_PATTERN.matcher(line).find()) {
-                        preciseDomainNameWhiteList.add(line.substring(DOMAIN_NAME_PRECISE_FLAG.length()));
-                    } else if (DOMAIN_NAME_FUZZY_PATTERN.matcher(line).find()) {
-                        fuzzyDomainNameWhiteList.add(line.substring(DOMAIN_NAME_FUZZY_FLAG.length()));
+                    Matcher matcher = DOMAIN_NAME_PRECISE_PATTERN.matcher(line);
+                    if (matcher.find() && (domainName = matcher.group(2)) != null) {
+                        preciseDomainNameWhiteList.add(domainName);
+                        continue;
+                    }
+                    matcher = DOMAIN_NAME_FUZZY_PATTERN.matcher(line);
+                    if (matcher.find() && (domainName = matcher.group(2)) != null) {
+                        fuzzyDomainNameWhiteList.add(domainName);
                     }
                 }
             }
