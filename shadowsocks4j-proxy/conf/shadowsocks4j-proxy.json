@@ -1,16 +1,19 @@
 {
     "local-server": {
         "ip": "127.0.0.1",
-        "port": 10721
+        "port": 10418
     },
     "remote-server": {
         "ip": "127.0.0.1",
         "port": 10727
     },
     "cipher": {
-        "password": 123456
+        "password": 123456,
+        "method": "aes_128_gcm"
     },
     "pac": {
-        "enable-pac-mode": true
+        "enable-pac-mode": true,
+        "update-url": "https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt",
+        "update-interval": 3600000
     }
 }

@@ -1,21 +1,17 @@
 package com.life4ever.shadowsocks4j.proxy.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.Shadowsocks4jProxyFileCallbackImpl;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.SystemRuleFileEventCallbackImpl;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.UserRuleFileEventCallbackImpl;
 import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
-import com.life4ever.shadowsocks4j.proxy.config.RuleConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
+import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -30,19 +26,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_CIPHER_METHOD;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_SYSTEM_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LINE_FEED;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SYSTEM_RULE_TXT_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
+import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.updateFile;
 import static com.life4ever.shadowsocks4j.proxy.util.HttpClientUtil.execute;
 
 public class ConfigUtil {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
 
@@ -54,11 +49,17 @@ public class ConfigUtil {
 
     private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
-    private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
-
     private static final List<String> SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(16);
 
     private static final List<String> SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(256);
+
+    private static final List<String> USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(16);
+
+    private static final List<String> USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(256);
+
+    private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
+
+    private static ShadowsocksProxyModeEnum proxyMode;
 
     static {
         try {
@@ -80,17 +81,19 @@ public class ConfigUtil {
 
         // 更新 local-server（强制）
         LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getLocalServerConfig())
-                .orElseThrow(() -> new Shadowsocks4jProxyException("Local server config is null.")));
+                .orElseThrow(() -> new Shadowsocks4jProxyException("Local server configuration is null.")));
 
         // 更新 remote-server（强制）
         REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getRemoteServerConfig())
-                .orElseThrow(() -> new Shadowsocks4jProxyException("Remote server config is null.")));
+                .orElseThrow(() -> new Shadowsocks4jProxyException("Remote server configuration is null.")));
 
         // 更新 cipher
         updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
 
         // 更新 pac
-        updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
+        if (ShadowsocksProxyModeEnum.LOCAL.equals(proxyMode)) {
+            updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
+        }
     }
 
     private static void updateCipherConfig(CipherConfig updatedCipherConfig) throws Shadowsocks4jProxyException {
@@ -125,21 +128,16 @@ public class ConfigUtil {
                     .orElse(Boolean.FALSE);
             pacConfig.setEnablePacMode(enablePacMode);
             if (enablePacMode) {
-                // 检查 systemRule
-                pacConfig.setSystemRuleConfig(Optional.ofNullable(newPacConfig.getSystemRuleConfig())
-                        .orElseGet(() -> new RuleConfig(DEFAULT_SYSTEM_RULE_TXT_LOCATION,
-                                DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL,
-                                DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL)));
-                // 创建 system-rule.txt 并启动定时器
-                startSystemRuleFileScheduler(pacConfig.getSystemRuleConfig());
-                // 检查 userRule（可选）
-                pacConfig.setUserRuleConfig(Optional.ofNullable(newPacConfig.getUserRuleConfig())
-                        .orElseGet(RuleConfig::new));
+                // 检查 updateUrl（可选）
+                pacConfig.setUpdateUrl(Optional.ofNullable(newPacConfig.getUpdateUrl())
+                        .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL));
+                // 检查 updateInterval（可选）
+                pacConfig.setUpdateInterval(Optional.ofNullable(newPacConfig.getUpdateInterval())
+                        .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL));
+                // 创建 system-rule.txt，并启动更新定时器
+                startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
                 // 创建 user-rule.txt
-                String userRuleFileLocation = pacConfig.getUserRuleConfig().getLocation();
-                if (userRuleFileLocation != null) {
-                    createRuleFile(userRuleFileLocation);
-                }
+                createRuleFile(USER_RULE_TXT_LOCATION);
             }
             PAC_CONFIG_ATOMIC_REFERENCE.set(pacConfig);
         } else {
@@ -148,33 +146,19 @@ public class ConfigUtil {
         }
     }
 
-    private static void startSystemRuleFileScheduler(RuleConfig systemRuleConfig) throws Shadowsocks4jProxyException {
-        createRuleFile(systemRuleConfig.getLocation());
+    private static void startSystemRuleFileScheduler(String fileLocation, String updateUrl, Long updateInterval) throws Shadowsocks4jProxyException {
+        createRuleFile(fileLocation);
         SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
-                        String base64EncodedString = execute(systemRuleConfig.getUpdateUrl());
+                        String base64EncodedString = execute(updateUrl);
                         String base64DecodedString = new String(Base64.getDecoder().decode(base64EncodedString.replaceAll(LINE_FEED, BLANK_STRING)), StandardCharsets.UTF_8);
-                        writeSystemRule(base64DecodedString);
+                        updateFile(fileLocation, base64DecodedString);
                     } catch (Shadowsocks4jProxyException e) {
                         LOG.error(e.getMessage(), e);
                     }
                 }
-                , 0L, systemRuleConfig.getUpdateInterval(), TimeUnit.MILLISECONDS);
-    }
-
-    private static void writeSystemRule(String base64DecodedString) throws Shadowsocks4jProxyException {
-        PacConfig pacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
-        String systemRuleLocation = pacConfig.getSystemRuleConfig().getLocation();
-        updateFile(systemRuleLocation, base64DecodedString);
-    }
-
-    private static Shadowsocks4jProxyConfig loadConfigurationFile() throws Shadowsocks4jProxyException {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(SHADOWSOCKS4J_PROXY_JSON_LOCATION))) {
-            return OBJECT_MAPPER.readValue(bufferedReader, Shadowsocks4jProxyConfig.class);
-        } catch (IOException e) {
-            throw new Shadowsocks4jProxyException(e.getMessage(), e);
-        }
+                , 0L, updateInterval, TimeUnit.MILLISECONDS);
     }
 
     public static List<String> getSystemRulePreciseDomainNameWhiteList() {
@@ -183,6 +167,24 @@ public class ConfigUtil {
 
     public static List<String> getSystemRuleFuzzyDomainNameWhiteList() {
         return SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
+    }
+
+    public static List<String> getUserRulePreciseDomainNameWhiteList() {
+        return USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST;
+    }
+
+    public static List<String> getUserRuleFuzzyDomainNameWhiteList() {
+        return USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
+    }
+
+    public static void clearSystemRuleWhiteList() {
+        SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST.clear();
+        SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST.clear();
+    }
+
+    public static void clearUserRuleWhiteList() {
+        USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST.clear();
+        USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST.clear();
     }
 
     public static SocketAddress getLocalServerSocketAddress() {
@@ -195,14 +197,16 @@ public class ConfigUtil {
         return new InetSocketAddress(remoteServerConfig.getIp(), remoteServerConfig.getPort());
     }
 
-    public static String getSystemRuleLocation() {
-        RuleConfig systemRuleConfig = PAC_CONFIG_ATOMIC_REFERENCE.get().getSystemRuleConfig();
-        return systemRuleConfig.getLocation();
+    public static ShadowsocksProxyModeEnum getProxyMode() {
+        return proxyMode;
     }
 
-    public static String getUserRuleLocation() {
-        RuleConfig userRuleConfig = PAC_CONFIG_ATOMIC_REFERENCE.get().getUserRuleConfig();
-        return userRuleConfig.getLocation();
+    public static void activateLocalMode() {
+        proxyMode = ShadowsocksProxyModeEnum.LOCAL;
+    }
+
+    public static void activateRemoteMode() {
+        proxyMode = ShadowsocksProxyModeEnum.REMOTE;
     }
 
 }

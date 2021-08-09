@@ -1,12 +1,16 @@
 package com.life4ever.shadowsocks4j.proxy.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.life4ever.shadowsocks4j.proxy.callback.FileEventCallback;
+import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -23,14 +27,25 @@ import java.util.stream.Collectors;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.FILE_MONITOR_THREAD_NAME;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_CONF_DIR;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
 
 public class FileUtil {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 
     private static Map<String, FileEventCallback> FILE_EVENT_CALLBACK_MAP;
 
     private FileUtil() {
+    }
+
+    public static Shadowsocks4jProxyConfig loadConfigurationFile() throws Shadowsocks4jProxyException {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(SHADOWSOCKS4J_PROXY_JSON_LOCATION))) {
+            return OBJECT_MAPPER.readValue(bufferedReader, Shadowsocks4jProxyConfig.class);
+        } catch (IOException e) {
+            throw new Shadowsocks4jProxyException(e.getMessage(), e);
+        }
     }
 
     public static void createRuleFile(String ruleFileLocation) throws Shadowsocks4jProxyException {
@@ -49,6 +64,7 @@ public class FileUtil {
             writer.write(BLANK_STRING);
             writer.flush();
             writer.write(content);
+            writer.flush();
         } catch (IOException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
@@ -81,8 +97,8 @@ public class FileUtil {
             for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
                 String fileName = ((Path) watchEvent.context()).getFileName().toString();
-
                 FileEventCallback fileEventCallback = FILE_EVENT_CALLBACK_MAP.get(fileName);
+
                 if (fileEventCallback == null) {
                     return;
                 }

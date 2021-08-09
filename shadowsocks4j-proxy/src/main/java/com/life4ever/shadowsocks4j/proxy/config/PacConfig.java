@@ -7,11 +7,11 @@ public class PacConfig {
     @JsonProperty("enable-pac-mode")
     private Boolean enablePacMode;
 
-    @JsonProperty("system-rule")
-    private RuleConfig systemRuleConfig;
+    @JsonProperty("update-url")
+    private String updateUrl;
 
-    @JsonProperty("user-rule")
-    private RuleConfig userRuleConfig;
+    @JsonProperty("update-interval")
+    private Long updateInterval;
 
     public PacConfig() {
     }
@@ -28,20 +28,20 @@ public class PacConfig {
         this.enablePacMode = enablePacMode;
     }
 
-    public RuleConfig getSystemRuleConfig() {
-        return systemRuleConfig;
+    public String getUpdateUrl() {
+        return updateUrl;
     }
 
-    public void setSystemRuleConfig(RuleConfig systemRuleConfig) {
-        this.systemRuleConfig = systemRuleConfig;
+    public void setUpdateUrl(String updateUrl) {
+        this.updateUrl = updateUrl;
     }
 
-    public RuleConfig getUserRuleConfig() {
-        return userRuleConfig;
+    public Long getUpdateInterval() {
+        return updateInterval;
     }
 
-    public void setUserRuleConfig(RuleConfig userRuleConfig) {
-        this.userRuleConfig = userRuleConfig;
+    public void setUpdateInterval(Long updateInterval) {
+        this.updateInterval = updateInterval;
     }
-
+    
 }
