@@ -35,7 +35,7 @@ public class FileUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 
-    private static Map<String, FileEventCallback> FILE_EVENT_CALLBACK_MAP;
+    private static Map<String, FileEventCallback> fileEventCallbackMap;
 
     private FileUtil() {
     }
@@ -71,7 +71,7 @@ public class FileUtil {
     }
 
     public static void startFileWatchService(List<FileEventCallback> fileEventCallbackList) {
-        FILE_EVENT_CALLBACK_MAP = fileEventCallbackList.stream()
+        fileEventCallbackMap = fileEventCallbackList.stream()
                 .collect(Collectors.toConcurrentMap(FileEventCallback::getFileName, fileEventCallback -> fileEventCallback));
 
         Thread thread = new Thread(() -> {
@@ -97,7 +97,7 @@ public class FileUtil {
             for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
                 String fileName = ((Path) watchEvent.context()).getFileName().toString();
-                FileEventCallback fileEventCallback = FILE_EVENT_CALLBACK_MAP.get(fileName);
+                FileEventCallback fileEventCallback = fileEventCallbackMap.get(fileName);
 
                 if (fileEventCallback == null) {
                     return;
