@@ -6,7 +6,7 @@ import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_FUZZY_PATTERN;
@@ -38,8 +38,8 @@ public class SystemRuleFileEventCallbackImpl implements FileEventCallback {
     @Override
     public void resolveModifyEvent() throws Shadowsocks4jProxyException {
         clearSystemRuleWhiteList();
-        List<String> preciseDomainNameWhiteList = getSystemRulePreciseDomainNameWhiteList();
-        List<String> fuzzyDomainNameWhiteList = getSystemRuleFuzzyDomainNameWhiteList();
+        Set<String> preciseDomainNameWhiteList = getSystemRulePreciseDomainNameWhiteList();
+        Set<String> fuzzyDomainNameWhiteList = getSystemRuleFuzzyDomainNameWhiteList();
 
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(SYSTEM_RULE_TXT_LOCATION))) {
             String line;

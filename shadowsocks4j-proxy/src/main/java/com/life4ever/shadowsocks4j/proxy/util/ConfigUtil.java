@@ -15,11 +15,12 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -49,13 +50,13 @@ public class ConfigUtil {
 
     private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
-    private static final List<String> SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(16);
+    private static final Set<String> SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(16));
 
-    private static final List<String> SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(256);
+    private static final Set<String> SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(256));
 
-    private static final List<String> USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(16);
+    private static final Set<String> USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(16));
 
-    private static final List<String> USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = new ArrayList<>(256);
+    private static final Set<String> USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(256));
 
     private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
 
@@ -161,19 +162,19 @@ public class ConfigUtil {
                 , 0L, updateInterval, TimeUnit.MILLISECONDS);
     }
 
-    public static List<String> getSystemRulePreciseDomainNameWhiteList() {
+    public static Set<String> getSystemRulePreciseDomainNameWhiteList() {
         return SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST;
     }
 
-    public static List<String> getSystemRuleFuzzyDomainNameWhiteList() {
+    public static Set<String> getSystemRuleFuzzyDomainNameWhiteList() {
         return SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
     }
 
-    public static List<String> getUserRulePreciseDomainNameWhiteList() {
+    public static Set<String> getUserRulePreciseDomainNameWhiteList() {
         return USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST;
     }
 
-    public static List<String> getUserRuleFuzzyDomainNameWhiteList() {
+    public static Set<String> getUserRuleFuzzyDomainNameWhiteList() {
         return USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
     }
 
