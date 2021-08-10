@@ -48,4 +48,14 @@ public class Shadowsocks4jProxyConfig {
         this.pacConfig = pacConfig;
     }
 
+    @Override
+    public String toString() {
+        return "Shadowsocks4jProxyConfig{" +
+                "localServerConfig=" + localServerConfig +
+                ", remoteServerConfig=" + remoteServerConfig +
+                ", cipherConfig=" + cipherConfig +
+                ", pacConfig=" + pacConfig +
+                '}';
+    }
+
 }

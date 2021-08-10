@@ -43,5 +43,14 @@ public class PacConfig {
     public void setUpdateInterval(Long updateInterval) {
         this.updateInterval = updateInterval;
     }
-    
+
+    @Override
+    public String toString() {
+        return "PacConfig{" +
+                "enablePacMode=" + enablePacMode +
+                ", updateUrl='" + updateUrl + '\'' +
+                ", updateInterval=" + updateInterval +
+                '}';
+    }
+
 }

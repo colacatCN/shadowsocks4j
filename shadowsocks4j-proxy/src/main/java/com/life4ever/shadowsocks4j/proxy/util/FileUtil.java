@@ -53,6 +53,9 @@ public class FileUtil {
         try {
             if (!ruleFile.exists()) {
                 Files.createFile(ruleFile.toPath());
+                LOG.info("Succeed to create file {}.", ruleFile.getName());
+            } else {
+                LOG.warn("Failed to create file {}, because it already exists.", ruleFile.getName());
             }
         } catch (IOException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
@@ -61,8 +64,10 @@ public class FileUtil {
 
     public static void updateFile(String filePath, String content) throws Shadowsocks4jProxyException {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath))) {
+            // 清空文件
             writer.write(BLANK_STRING);
             writer.flush();
+            // 写入数据
             writer.write(content);
             writer.flush();
         } catch (IOException e) {
@@ -89,6 +94,7 @@ public class FileUtil {
 
         thread.setDaemon(true);
         thread.start();
+        LOG.info("Start daemon thread {}.", thread.getName());
     }
 
     private static void doFileWatchService(WatchService watchService) throws Shadowsocks4jProxyException {
@@ -104,10 +110,13 @@ public class FileUtil {
                 }
 
                 if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
+                    LOG.info("Trigger file {} creation event.", fileName);
                     fileEventCallback.resolveCreateEvent();
                 } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
+                    LOG.info("Trigger file {} deletion event.", fileName);
                     fileEventCallback.resolveDeleteEvent();
                 } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
+                    LOG.info("Trigger file {} modification event.", fileName);
                     fileEventCallback.resolveModifyEvent();
                 }
             }

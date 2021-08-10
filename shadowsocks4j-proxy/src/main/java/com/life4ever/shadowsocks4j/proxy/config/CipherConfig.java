@@ -21,5 +21,13 @@ public class CipherConfig {
     public void setMethod(String method) {
         this.method = method;
     }
-    
+
+    @Override
+    public String toString() {
+        return "CipherConfig{" +
+                "password='" + password + '\'' +
+                ", method='" + method + '\'' +
+                '}';
+    }
+
 }

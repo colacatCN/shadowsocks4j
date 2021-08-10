@@ -1,7 +1,5 @@
 package com.life4ever.shadowsocks4j.proxy.config;
 
-import java.util.Objects;
-
 public class ServerConfig {
 
     private String ip;
@@ -25,21 +23,11 @@ public class ServerConfig {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        ServerConfig that = (ServerConfig) obj;
-        return Objects.equals(ip, that.ip) && Objects.equals(port, that.port);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(ip, port);
+    public String toString() {
+        return "ServerConfig{" +
+                "ip='" + ip + '\'' +
+                ", port=" + port +
+                '}';
     }
 
 }

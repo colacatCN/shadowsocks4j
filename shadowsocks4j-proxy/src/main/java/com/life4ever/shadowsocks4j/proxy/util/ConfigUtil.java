@@ -79,6 +79,7 @@ public class ConfigUtil {
     private static void updateShadowsocks4jProxyConfig() throws Shadowsocks4jProxyException {
         // 加载配置文件
         Shadowsocks4jProxyConfig shadowsocks4jProxyConfig = loadConfigurationFile();
+        LOG.info("Shadowsocks4j proxy configuration is {}.", shadowsocks4jProxyConfig);
 
         // 更新 local-server（强制）
         LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getLocalServerConfig())
@@ -160,6 +161,7 @@ public class ConfigUtil {
                     }
                 }
                 , 0L, updateInterval, TimeUnit.MILLISECONDS);
+        LOG.info("Start scheduled executor service for system rule.");
     }
 
     public static Set<String> getSystemRulePreciseDomainNameWhiteList() {
