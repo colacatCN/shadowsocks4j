@@ -6,6 +6,7 @@ import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 
@@ -13,9 +14,11 @@ import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DO
 import static com.life4ever.shadowsocks4j.proxy.consts.AdBlockPlusFilterConst.DOMAIN_NAME_PRECISE_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT_LOCATION;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.clearUserRuleWhiteList;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getUserRuleFuzzyDomainNameWhiteList;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getUserRulePreciseDomainNameWhiteList;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.clearUserRuleWhiteMap;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.lockWhiteList;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.unlockWhiteList;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updateFuzzyDomainNameWhiteSet;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updatePreciseDomainNameWhiteSet;
 
 public class UserRuleFileEventCallbackImpl implements FileEventCallback {
 
@@ -31,16 +34,16 @@ public class UserRuleFileEventCallbackImpl implements FileEventCallback {
 
     @Override
     public void resolveDeleteEvent() {
-        clearUserRuleWhiteList();
+        clearUserRuleWhiteMap();
     }
 
     @Override
     public void resolveModifyEvent() throws Shadowsocks4jProxyException {
-        clearUserRuleWhiteList();
-        Set<String> preciseDomainNameWhiteList = getUserRulePreciseDomainNameWhiteList();
-        Set<String> fuzzyDomainNameWhiteList = getUserRuleFuzzyDomainNameWhiteList();
-
+        lockWhiteList();
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(USER_RULE_TXT_LOCATION))) {
+            Set<String> preciseDomainNameWhiteList = new HashSet<>(16);
+            Set<String> fuzzyDomainNameWhiteList = new HashSet<>(128);
+
             String line;
             String domainName;
             while ((line = bufferedReader.readLine()) != null) {
@@ -54,8 +57,13 @@ public class UserRuleFileEventCallbackImpl implements FileEventCallback {
                     fuzzyDomainNameWhiteList.add(domainName);
                 }
             }
+
+            updatePreciseDomainNameWhiteSet(preciseDomainNameWhiteList, false);
+            updateFuzzyDomainNameWhiteSet(fuzzyDomainNameWhiteList, false);
         } catch (IOException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
+        } finally {
+            unlockWhiteList();
         }
     }
 

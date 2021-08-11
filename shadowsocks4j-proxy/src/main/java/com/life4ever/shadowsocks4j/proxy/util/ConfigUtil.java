@@ -7,6 +7,7 @@ import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
+import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.slf4j.Logger;
@@ -18,12 +19,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_CIPHER_METHOD;
@@ -32,6 +37,8 @@ import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.D
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LINE_FEED;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SYSTEM_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
+import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -50,15 +57,17 @@ public class ConfigUtil {
 
     private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
-    private static final Set<String> SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(16));
+    private static final Map<MatcherModeEnum, Set<String>> SYSTEM_RULE_WHITE_MAP = new EnumMap<>(MatcherModeEnum.class);
 
-    private static final Set<String> SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(256));
+    private static final Map<MatcherModeEnum, Set<String>> USER_RULE_WHITE_MAP = new EnumMap<>(MatcherModeEnum.class);
 
-    private static final Set<String> USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(16));
+    private static final Set<String> PRECISE_DOMAIN_NAME_WHITE_SET = new HashSet<>(32);
 
-    private static final Set<String> USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST = Collections.synchronizedSet(new HashSet<>(256));
+    private static final Set<String> FUZZY_DOMAIN_NAME_WHITE_SET = new HashSet<>(512);
 
     private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
+
+    private static final Lock LOCK = new ReentrantLock();
 
     private static ShadowsocksProxyModeEnum proxyMode;
 
@@ -164,30 +173,54 @@ public class ConfigUtil {
         LOG.info("Start scheduled executor service for system rule.");
     }
 
-    public static Set<String> getSystemRulePreciseDomainNameWhiteList() {
-        return SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST;
+    public static boolean needRelayToRemoteServer(String domainName) {
+        LOCK.lock();
+        try {
+            if (PRECISE_DOMAIN_NAME_WHITE_SET.contains(domainName)) {
+                return false;
+            } else {
+                return FUZZY_DOMAIN_NAME_WHITE_SET.stream()
+                        .anyMatch(domainName::endsWith);
+            }
+        } finally {
+            LOCK.unlock();
+        }
     }
 
-    public static Set<String> getSystemRuleFuzzyDomainNameWhiteList() {
-        return SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
+    public static void updatePreciseDomainNameWhiteSet(Set<String> updatedPreciseDomainNameWhiteSet, boolean updateSystemRule) {
+        Set<String> oldPreciseDomainNameWhiteSet;
+        if (updateSystemRule) {
+            oldPreciseDomainNameWhiteSet = SYSTEM_RULE_WHITE_MAP.computeIfAbsent(PRECISE, matcherMode -> new HashSet<>(16));
+            SYSTEM_RULE_WHITE_MAP.put(PRECISE, updatedPreciseDomainNameWhiteSet);
+        } else {
+            oldPreciseDomainNameWhiteSet = USER_RULE_WHITE_MAP.computeIfAbsent(PRECISE, matcherMode -> new HashSet<>(16));
+            USER_RULE_WHITE_MAP.put(PRECISE, updatedPreciseDomainNameWhiteSet);
+        }
+        PRECISE_DOMAIN_NAME_WHITE_SET.removeAll(oldPreciseDomainNameWhiteSet);
+        PRECISE_DOMAIN_NAME_WHITE_SET.addAll(updatedPreciseDomainNameWhiteSet);
     }
 
-    public static Set<String> getUserRulePreciseDomainNameWhiteList() {
-        return USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST;
+    public static void updateFuzzyDomainNameWhiteSet(Set<String> updatedFuzzyDomainNameWhiteSet, boolean updateSystemRule) {
+        Set<String> oldFuzzyDomainNameWhiteSet;
+        if (updateSystemRule) {
+            oldFuzzyDomainNameWhiteSet = SYSTEM_RULE_WHITE_MAP.computeIfAbsent(FUZZY, matcherMode -> new HashSet<>(16));
+            SYSTEM_RULE_WHITE_MAP.put(FUZZY, updatedFuzzyDomainNameWhiteSet);
+        } else {
+            oldFuzzyDomainNameWhiteSet = USER_RULE_WHITE_MAP.computeIfAbsent(FUZZY, matcherMode -> new HashSet<>(16));
+            USER_RULE_WHITE_MAP.put(FUZZY, updatedFuzzyDomainNameWhiteSet);
+        }
+        FUZZY_DOMAIN_NAME_WHITE_SET.removeAll(oldFuzzyDomainNameWhiteSet);
+        FUZZY_DOMAIN_NAME_WHITE_SET.addAll(updatedFuzzyDomainNameWhiteSet);
     }
 
-    public static Set<String> getUserRuleFuzzyDomainNameWhiteList() {
-        return USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST;
+    public static void clearSystemRuleWhiteMap() {
+        updatePreciseDomainNameWhiteSet(Collections.emptySet(), true);
+        updateFuzzyDomainNameWhiteSet(Collections.emptySet(), true);
     }
 
-    public static void clearSystemRuleWhiteList() {
-        SYSTEM_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST.clear();
-        SYSTEM_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST.clear();
-    }
-
-    public static void clearUserRuleWhiteList() {
-        USER_RULE_PRECISE_DOMAIN_NAME_WHITE_LIST.clear();
-        USER_RULE_FUZZY_DOMAIN_NAME_WHITE_LIST.clear();
+    public static void clearUserRuleWhiteMap() {
+        updatePreciseDomainNameWhiteSet(Collections.emptySet(), false);
+        updateFuzzyDomainNameWhiteSet(Collections.emptySet(), false);
     }
 
     public static SocketAddress getLocalServerSocketAddress() {
@@ -210,6 +243,14 @@ public class ConfigUtil {
 
     public static void activateRemoteMode() {
         proxyMode = ShadowsocksProxyModeEnum.REMOTE;
+    }
+
+    public static void lockWhiteList() {
+        LOCK.lock();
+    }
+
+    public static void unlockWhiteList() {
+        LOCK.unlock();
     }
 
 }
