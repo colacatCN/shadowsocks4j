@@ -2,6 +2,8 @@ package com.life4ever.shadowsocks4j.proxy.consts;
 
 public class Shadowsocks4jProxyConst {
 
+    public static final int RUNTIME_AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+
     public static final String SHADOWSOCKS4J_CONF_DIR = System.getProperty("user.dir") + "/conf/";
 
     public static final String SHADOWSOCKS4J_PROXY_JSON = "shadowsocks4j-proxy.json";

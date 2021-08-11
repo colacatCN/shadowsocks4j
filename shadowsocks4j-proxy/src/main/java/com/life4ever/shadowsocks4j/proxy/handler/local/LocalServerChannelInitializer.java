@@ -1,5 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
+import com.life4ever.shadowsocks4j.proxy.handler.common.CommonHeartbeatHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -21,7 +22,7 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // heartbeat
         pipeline.addLast(new IdleStateHandler(10, 0, 0, TimeUnit.SECONDS));
-        pipeline.addLast(LocalHeartbeatHandler.getInstance());
+        pipeline.addLast(CommonHeartbeatHandler.getInstance());
 
         // init
         pipeline.addLast(new Socks5InitialRequestDecoder());

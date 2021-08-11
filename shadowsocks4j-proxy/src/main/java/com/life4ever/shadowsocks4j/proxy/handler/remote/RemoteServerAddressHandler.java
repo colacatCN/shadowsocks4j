@@ -3,8 +3,10 @@ package com.life4ever.shadowsocks4j.proxy.handler.remote;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
 
@@ -12,9 +14,17 @@ import java.net.InetSocketAddress;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV4_ADDRESS_BYTE_LENGTH;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV6_ADDRESS_BYTE_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
 import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
 
+
+@ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
+
+    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup(RUNTIME_AVAILABLE_PROCESSORS << 1);
+
+    private RemoteServerAddressHandler() {
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -30,7 +40,7 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         int port = decryptedByteBuf.readShort();
 
         // 交由 RemoteToTargetHandler 处理
-        ctx.channel().pipeline().addLast(new RemoteToTargetHandler(new InetSocketAddress(host, port), ctx));
+        ctx.channel().pipeline().addLast(new RemoteToTargetHandler(workerGroup, new InetSocketAddress(host, port), ctx));
         ctx.channel().pipeline().remove(this);
         ctx.fireChannelRead(decryptedByteBuf);
     }
@@ -53,6 +63,16 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
             host = new String(hostnameBytes);
         }
         return host;
+    }
+
+    public static RemoteServerAddressHandler getInstance() {
+        return RemoteServerAddressHandlerHolder.INSTANCE;
+    }
+
+    private static class RemoteServerAddressHandlerHolder {
+
+        private static final RemoteServerAddressHandler INSTANCE = new RemoteServerAddressHandler();
+
     }
 
 }

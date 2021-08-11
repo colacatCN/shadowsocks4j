@@ -13,23 +13,25 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
-import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandStatus;
 import io.netty.handler.codec.socksx.v5.Socks5CommandType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
 
 @ChannelHandler.Sharable
 public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
-    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup(RUNTIME_AVAILABLE_PROCESSORS << 1);
 
     private Socks5CommandRequestHandler() {
     }
@@ -43,6 +45,9 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         if (!Socks5CommandType.CONNECT.equals(msg.type())) {
             throw new Shadowsocks4jProxyException("SOCKS command type is not CONNECT.");
         }
+
+        SocketAddress clientInetSocketAddress = ctx.channel().remoteAddress();
+        LOG.info("Start channel @ {}.", clientInetSocketAddress);
 
         relayToRemoteServer(ctx, msg);
     }
@@ -68,21 +73,37 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
                 });
 
-        SocketAddress remoteServerInetSocketAddress = getRemoteServerSocketAddress();
-        bootstrap.connect(remoteServerInetSocketAddress)
-                .addListener((ChannelFutureListener) channelFuture -> {
-                    Socks5CommandResponse socks5CommandResponse;
-                    if (channelFuture.isSuccess()) {
-                        LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
-                        ChannelPipeline pipeline = ctx.channel().pipeline();
-                        pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
-                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, Socks5AddressType.IPv4);
-                    } else {
-                        LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
-                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, Socks5AddressType.IPv4);
-                    }
-                    ctx.writeAndFlush(socks5CommandResponse);
-                });
+        if (needRelayToRemoteServer(msg.dstAddr())) {
+            SocketAddress remoteServerInetSocketAddress = getRemoteServerSocketAddress();
+            bootstrap.connect(remoteServerInetSocketAddress)
+                    .addListener((ChannelFutureListener) channelFuture -> {
+                        Socks5CommandResponse socks5CommandResponse;
+                        if (channelFuture.isSuccess()) {
+                            LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                            ChannelPipeline pipeline = ctx.channel().pipeline();
+                            pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
+                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
+                        } else {
+                            LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
+                        }
+                        ctx.writeAndFlush(socks5CommandResponse);
+                    });
+        } else {
+            SocketAddress targetServerInetSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
+            bootstrap.connect(targetServerInetSocketAddress)
+                    .addListener((ChannelFutureListener) channelFuture -> {
+                        Socks5CommandResponse socks5CommandResponse;
+                        if (channelFuture.isSuccess()) {
+                            LOG.info("Succeed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
+                        } else {
+                            LOG.error("Failed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
+                        }
+                        ctx.writeAndFlush(socks5CommandResponse);
+                    });
+        }
     }
 
     public static Socks5CommandRequestHandler getInstance() {

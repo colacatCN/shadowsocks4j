@@ -21,13 +21,16 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemoteToTargetHandler.class);
 
+    private final NioEventLoopGroup workerGroup;
+
     private final InetSocketAddress targetServerInetSocketAddress;
 
     private final AtomicReference<Channel> channelAtomicReference;
 
-    public RemoteToTargetHandler(InetSocketAddress targetServerInetSocketAddress, ChannelHandlerContext localChannelHandlerContext) {
+    public RemoteToTargetHandler(NioEventLoopGroup workerGroup, InetSocketAddress targetServerInetSocketAddress, ChannelHandlerContext localChannelHandlerContext) {
+        this.workerGroup = workerGroup;
         this.targetServerInetSocketAddress = targetServerInetSocketAddress;
-        this.channelAtomicReference = new AtomicReference<>(null);
+        this.channelAtomicReference = new AtomicReference<>();
         relayToTargetServer(localChannelHandlerContext);
     }
 
@@ -45,7 +48,6 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
 
     private void relayToTargetServer(ChannelHandlerContext localChannelHandlerContext) {
         Bootstrap bootstrap = new Bootstrap();
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
         bootstrap.group(workerGroup)
                 .channel(NioSocketChannel.class)

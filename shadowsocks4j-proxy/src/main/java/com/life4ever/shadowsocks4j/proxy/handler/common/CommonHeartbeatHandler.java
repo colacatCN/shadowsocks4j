@@ -1,4 +1,4 @@
-package com.life4ever.shadowsocks4j.proxy.handler.local;
+package com.life4ever.shadowsocks4j.proxy.handler.common;
 
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketAddress;
 
 @ChannelHandler.Sharable
-public class LocalHeartbeatHandler extends ChannelInboundHandlerAdapter {
+public class CommonHeartbeatHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LocalHeartbeatHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CommonHeartbeatHandler.class);
 
-    private LocalHeartbeatHandler() {
+    private CommonHeartbeatHandler() {
     }
 
     @Override
@@ -30,13 +30,13 @@ public class LocalHeartbeatHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public static LocalHeartbeatHandler getInstance() {
-        return LocalHeartbeatHandlerHolder.INSTANCE;
+    public static CommonHeartbeatHandler getInstance() {
+        return CommonHeartbeatHandlerHolder.INSTANCE;
     }
 
-    private static class LocalHeartbeatHandlerHolder {
+    private static class CommonHeartbeatHandlerHolder {
 
-        private static final LocalHeartbeatHandler INSTANCE = new LocalHeartbeatHandler();
+        private static final CommonHeartbeatHandler INSTANCE = new CommonHeartbeatHandler();
 
     }
 

@@ -180,7 +180,7 @@ public class ConfigUtil {
                 return false;
             } else {
                 return FUZZY_DOMAIN_NAME_WHITE_SET.stream()
-                        .anyMatch(domainName::endsWith);
+                        .noneMatch(domainName::endsWith);
             }
         } finally {
             LOCK.unlock();

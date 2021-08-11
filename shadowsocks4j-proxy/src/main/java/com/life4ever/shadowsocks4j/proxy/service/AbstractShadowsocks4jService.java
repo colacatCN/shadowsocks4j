@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
+
 public abstract class AbstractShadowsocks4jService implements IShadowsocks4jService {
 
     protected final Logger LOG = LoggerFactory.getLogger(getClass());
-
-    private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final String serviceName;
 
@@ -36,7 +36,7 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
     }
 
     protected AbstractShadowsocks4jService(String serviceName, SocketAddress publishSocketAddress) {
-        this(serviceName, publishSocketAddress, AVAILABLE_PROCESSORS << 1);
+        this(serviceName, publishSocketAddress, RUNTIME_AVAILABLE_PROCESSORS << 1);
     }
 
     @Override
