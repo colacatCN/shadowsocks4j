@@ -11,6 +11,10 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SERVER_ALL_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SERVER_READ_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SERVER_WRITE_IDLE_TIME;
+
 public class LocalServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     @Override
@@ -21,7 +25,7 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
         pipeline.addFirst(Socks5ServerEncoder.DEFAULT);
 
         // heartbeat
-        pipeline.addLast(new IdleStateHandler(10, 0, 0, TimeUnit.SECONDS));
+        pipeline.addLast(new IdleStateHandler(SERVER_READ_IDLE_TIME, SERVER_WRITE_IDLE_TIME, SERVER_ALL_IDLE_TIME, TimeUnit.MILLISECONDS));
         pipeline.addLast(CommonHeartbeatHandler.getInstance());
 
         // init

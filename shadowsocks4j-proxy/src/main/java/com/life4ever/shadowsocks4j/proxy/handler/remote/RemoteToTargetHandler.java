@@ -50,8 +50,8 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
         try {
             Channel channel;
             while ((channel = channelAtomicReference.get()) == null) {
-                if (!condition.await(5000L, TimeUnit.MILLISECONDS)) {
-                    throw new Shadowsocks4jProxyException("Failed to get channel within 5 seconds.");
+                if (!condition.await(60000L, TimeUnit.MILLISECONDS)) {
+                    throw new Shadowsocks4jProxyException("Failed to get channel within 60 seconds.");
                 }
             }
             channel.writeAndFlush(byteBuf);
