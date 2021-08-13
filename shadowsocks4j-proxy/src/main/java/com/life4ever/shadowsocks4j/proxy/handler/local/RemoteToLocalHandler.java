@@ -1,9 +1,11 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundInvoker;
+
+import java.util.Optional;
 
 public class RemoteToLocalHandler extends ChannelInboundHandlerAdapter {
 
@@ -21,10 +23,8 @@ public class RemoteToLocalHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        Channel channel = clientChannelHandlerContext.channel();
-        if (channel != null && !channel.isActive()) {
-            channel.close();
-        }
+        Optional.ofNullable(clientChannelHandlerContext.channel())
+                .ifPresent(ChannelOutboundInvoker::close);
     }
 
 }
