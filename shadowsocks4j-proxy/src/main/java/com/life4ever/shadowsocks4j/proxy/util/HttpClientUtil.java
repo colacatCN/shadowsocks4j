@@ -33,9 +33,9 @@ public class HttpClientUtil {
     private static OkHttpClient getOkHttpClient() {
         if (okHttpClient == null) {
             okHttpClient = new OkHttpClient.Builder()
-                    .connectTimeout(6 * 1000L, TimeUnit.MILLISECONDS)
-                    .readTimeout(6 * 1000L, TimeUnit.MILLISECONDS)
-                    .writeTimeout(6 * 1000L, TimeUnit.MILLISECONDS)
+                    .connectTimeout(60 * 1000L, TimeUnit.MILLISECONDS)
+                    .readTimeout(60 * 1000L, TimeUnit.MILLISECONDS)
+                    .writeTimeout(60 * 1000L, TimeUnit.MILLISECONDS)
                     .build();
         }
         return okHttpClient;

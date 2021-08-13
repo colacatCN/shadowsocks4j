@@ -8,7 +8,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
 
@@ -16,16 +16,17 @@ import java.net.InetSocketAddress;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV4_ADDRESS_BYTE_LENGTH;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV6_ADDRESS_BYTE_LENGTH;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
 import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
-
 
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
-    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup(RUNTIME_AVAILABLE_PROCESSORS << 1);
+    private static volatile RemoteServerAddressHandler INSTANCE;
 
-    private RemoteServerAddressHandler() {
+    private final EventLoopGroup clientWorkerGroup;
+
+    private RemoteServerAddressHandler(EventLoopGroup clientWorkerGroup) {
+        this.clientWorkerGroup = clientWorkerGroup;
     }
 
     @Override
@@ -43,7 +44,7 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
         // 交由 RemoteToTargetHandler 处理
         ChannelPipeline pipeline = ctx.channel().pipeline();
-        pipeline.addLast(new RemoteToTargetHandler(workerGroup, new InetSocketAddress(host, port), ctx));
+        pipeline.addLast(new RemoteToTargetHandler(clientWorkerGroup, new InetSocketAddress(host, port), ctx));
         pipeline.addLast(ExceptionCaughtHandler.getInstance());
         pipeline.remove(this);
         ctx.fireChannelRead(decryptedByteBuf);
@@ -69,14 +70,15 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         return host;
     }
 
-    public static RemoteServerAddressHandler getInstance() {
-        return RemoteServerAddressHandlerHolder.INSTANCE;
-    }
-
-    private static class RemoteServerAddressHandlerHolder {
-
-        private static final RemoteServerAddressHandler INSTANCE = new RemoteServerAddressHandler();
-
+    public static RemoteServerAddressHandler getInstance(EventLoopGroup clientWorkerGroup) {
+        if (INSTANCE == null) {
+            synchronized (RemoteServerAddressHandler.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new RemoteServerAddressHandler(clientWorkerGroup);
+                }
+            }
+        }
+        return INSTANCE;
     }
 
 }

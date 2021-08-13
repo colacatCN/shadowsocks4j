@@ -7,8 +7,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
 
@@ -31,9 +30,12 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
-    private final NioEventLoopGroup workerGroup = new NioEventLoopGroup(RUNTIME_AVAILABLE_PROCESSORS << 1);
+    private static volatile Socks5CommandRequestHandler INSTANCE;
 
-    private Socks5CommandRequestHandler() {
+    private final EventLoopGroup clientWorkerGroup;
+
+    private Socks5CommandRequestHandler(EventLoopGroup clientWorkerGroup) {
+        this.clientWorkerGroup = clientWorkerGroup;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         Bootstrap bootstrap = new Bootstrap();
 
-        bootstrap.group(workerGroup)
+        bootstrap.group(clientWorkerGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
 
@@ -106,14 +108,15 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         }
     }
 
-    public static Socks5CommandRequestHandler getInstance() {
-        return Socks5CommandRequestHandlerHolder.INSTANCE;
-    }
-
-    private static class Socks5CommandRequestHandlerHolder {
-
-        private static final Socks5CommandRequestHandler INSTANCE = new Socks5CommandRequestHandler();
-
+    public static Socks5CommandRequestHandler getInstance(EventLoopGroup clientWorkerGroup) {
+        if (INSTANCE == null) {
+            synchronized (Socks5CommandRequestHandler.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new Socks5CommandRequestHandler(clientWorkerGroup);
+                }
+            }
+        }
+        return INSTANCE;
     }
 
 }

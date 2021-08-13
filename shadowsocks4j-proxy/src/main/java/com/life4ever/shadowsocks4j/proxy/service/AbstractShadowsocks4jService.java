@@ -21,22 +21,31 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     private final SocketAddress publishSocketAddress;
 
-    private final int numOfWorkers;
+    private final int numOfServerWorkers;
+
+    private final int numOfClientWorkers;
 
     private ServerBootstrap serverBootstrap;
 
     private EventLoopGroup bossGroup;
 
-    private EventLoopGroup workerGroup;
+    private EventLoopGroup serverWorkerGroup;
 
-    protected AbstractShadowsocks4jService(String serviceName, SocketAddress publishSocketAddress, int numOfWorkers) {
+    private EventLoopGroup clientWorkerGroup;
+
+    protected AbstractShadowsocks4jService(
+            String serviceName,
+            SocketAddress publishSocketAddress,
+            int numOfServerWorkers,
+            int numOfClientWorkers) {
         this.serviceName = serviceName;
         this.publishSocketAddress = publishSocketAddress;
-        this.numOfWorkers = numOfWorkers;
+        this.numOfServerWorkers = numOfServerWorkers;
+        this.numOfClientWorkers = numOfClientWorkers;
     }
 
     protected AbstractShadowsocks4jService(String serviceName, SocketAddress publishSocketAddress) {
-        this(serviceName, publishSocketAddress, RUNTIME_AVAILABLE_PROCESSORS << 1);
+        this(serviceName, publishSocketAddress, RUNTIME_AVAILABLE_PROCESSORS << 1, RUNTIME_AVAILABLE_PROCESSORS << 1);
     }
 
     @Override
@@ -57,22 +66,28 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
     @Override
     public void shutdownGracefully() {
         bossGroup.shutdownGracefully();
-        workerGroup.shutdownGracefully();
+        serverWorkerGroup.shutdownGracefully();
     }
 
     protected void initialize() {
         ThreadFactory bossGroupThreadFactory = new DefaultThreadFactory("netty-boss");
-        ThreadFactory workerGroupThreadFactory = new DefaultThreadFactory("netty-worker");
+        ThreadFactory serverWorkerGroupThreadFactory = new DefaultThreadFactory("netty-server-worker");
+        ThreadFactory clientWorkerGroupThreadFactory = new DefaultThreadFactory("netty-client-worker");
 
         bossGroup = initializeEventLoopGroup(1, bossGroupThreadFactory);
-        workerGroup = initializeEventLoopGroup(numOfWorkers, workerGroupThreadFactory);
+        serverWorkerGroup = initializeEventLoopGroup(numOfServerWorkers, serverWorkerGroupThreadFactory);
+        clientWorkerGroup = initializeEventLoopGroup(numOfClientWorkers, clientWorkerGroupThreadFactory);
 
         serverBootstrap = new ServerBootstrap()
-                .group(bossGroup, workerGroup);
+                .group(bossGroup, serverWorkerGroup);
     }
 
     protected ServerBootstrap serverBootstrap() {
         return serverBootstrap;
+    }
+
+    protected EventLoopGroup clientWorkerGroup() {
+        return clientWorkerGroup;
     }
 
     protected abstract EventLoopGroup initializeEventLoopGroup(int numOfThreads, ThreadFactory threadFactory);

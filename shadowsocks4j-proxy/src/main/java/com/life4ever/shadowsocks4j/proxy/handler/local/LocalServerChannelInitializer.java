@@ -3,6 +3,7 @@ package com.life4ever.shadowsocks4j.proxy.handler.local;
 import com.life4ever.shadowsocks4j.proxy.handler.common.CommonHeartbeatHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequestDecoder;
 import io.netty.handler.codec.socksx.v5.Socks5InitialRequestDecoder;
@@ -16,6 +17,12 @@ import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.S
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SERVER_WRITE_IDLE_TIME;
 
 public class LocalServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+
+    private final EventLoopGroup clientWorkerGroup;
+
+    public LocalServerChannelInitializer(EventLoopGroup clientWorkerGroup) {
+        this.clientWorkerGroup = clientWorkerGroup;
+    }
 
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
@@ -34,7 +41,7 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // command
         pipeline.addLast(new Socks5CommandRequestDecoder());
-        pipeline.addLast(Socks5CommandRequestHandler.getInstance());
+        pipeline.addLast(Socks5CommandRequestHandler.getInstance(clientWorkerGroup));
     }
 
 }

@@ -10,7 +10,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
@@ -27,7 +27,7 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(RemoteToTargetHandler.class);
 
-    private final NioEventLoopGroup workerGroup;
+    private final EventLoopGroup clientWorkerGroup;
 
     private final InetSocketAddress targetServerInetSocketAddress;
 
@@ -37,8 +37,10 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
 
     private final Condition condition = lock.newCondition();
 
-    public RemoteToTargetHandler(NioEventLoopGroup workerGroup, InetSocketAddress targetServerInetSocketAddress, ChannelHandlerContext localChannelHandlerContext) {
-        this.workerGroup = workerGroup;
+    public RemoteToTargetHandler(EventLoopGroup clientWorkerGroup,
+                                 InetSocketAddress targetServerInetSocketAddress,
+                                 ChannelHandlerContext localChannelHandlerContext) {
+        this.clientWorkerGroup = clientWorkerGroup;
         this.targetServerInetSocketAddress = targetServerInetSocketAddress;
         this.channelAtomicReference = new AtomicReference<>();
         relayToTargetServer(localChannelHandlerContext);
@@ -64,7 +66,7 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
     private void relayToTargetServer(ChannelHandlerContext localChannelHandlerContext) {
         Bootstrap bootstrap = new Bootstrap();
 
-        bootstrap.group(workerGroup)
+        bootstrap.group(clientWorkerGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new ChannelInitializer<SocketChannel>() {
 

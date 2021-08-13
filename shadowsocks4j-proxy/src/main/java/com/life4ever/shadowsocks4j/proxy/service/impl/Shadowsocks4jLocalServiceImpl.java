@@ -42,7 +42,7 @@ public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService 
     protected ChannelFuture bind(SocketAddress publishSocketAddress) {
         return serverBootstrap()
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new LocalServerChannelInitializer())
+                .childHandler(new LocalServerChannelInitializer(clientWorkerGroup()))
                 .bind(publishSocketAddress);
     }
 
