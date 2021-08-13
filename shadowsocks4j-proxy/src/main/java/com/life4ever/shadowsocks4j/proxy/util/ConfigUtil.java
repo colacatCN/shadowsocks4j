@@ -85,7 +85,7 @@ public class ConfigUtil {
     private ConfigUtil() {
     }
 
-    private static void updateShadowsocks4jProxyConfig() throws Shadowsocks4jProxyException {
+    public static void updateShadowsocks4jProxyConfig() throws Shadowsocks4jProxyException {
         // 加载配置文件
         Shadowsocks4jProxyConfig shadowsocks4jProxyConfig = loadConfigurationFile();
         LOG.info("Shadowsocks4j proxy configuration is {}.", shadowsocks4jProxyConfig);

@@ -1,6 +1,7 @@
 package com.life4ever.shadowsocks4j.proxy.handler.remote;
 
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
+import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -60,12 +61,6 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOG.error(cause.getMessage(), cause);
-        ctx.channel().close();
-    }
-
     private void relayToTargetServer(ChannelHandlerContext localChannelHandlerContext) {
         Bootstrap bootstrap = new Bootstrap();
 
@@ -77,6 +72,7 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
                         pipeline.addLast(new TargetToRemoteHandler(localChannelHandlerContext));
+                        pipeline.addLast(ExceptionCaughtHandler.getInstance());
                     }
 
                 });

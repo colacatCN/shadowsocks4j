@@ -40,11 +40,11 @@ public class Shadowsocks4jProxyConst {
 
     public static final String BLANK_STRING = "";
 
-    public static final Long SERVER_READ_IDLE_TIME = 60 * 1000L;
+    public static final Long SERVER_READ_IDLE_TIME = 5 * 60 * 1000L;
 
-    public static final Long SERVER_WRITE_IDLE_TIME = 60 * 1000L;
+    public static final Long SERVER_WRITE_IDLE_TIME = 5 * 60 * 1000L;
 
-    public static final Long SERVER_ALL_IDLE_TIME = 60 * 1000L;
+    public static final Long SERVER_ALL_IDLE_TIME = 5 * 60 * 1000L;
 
     private Shadowsocks4jProxyConst() {
     }

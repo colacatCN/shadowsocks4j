@@ -1,11 +1,13 @@
 package com.life4ever.shadowsocks4j.proxy.handler.remote;
 
+import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
@@ -40,8 +42,10 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         int port = decryptedByteBuf.readShort();
 
         // 交由 RemoteToTargetHandler 处理
-        ctx.channel().pipeline().addLast(new RemoteToTargetHandler(workerGroup, new InetSocketAddress(host, port), ctx));
-        ctx.channel().pipeline().remove(this);
+        ChannelPipeline pipeline = ctx.channel().pipeline();
+        pipeline.addLast(new RemoteToTargetHandler(workerGroup, new InetSocketAddress(host, port), ctx));
+        pipeline.addLast(ExceptionCaughtHandler.getInstance());
+        pipeline.remove(this);
         ctx.fireChannelRead(decryptedByteBuf);
     }
 
