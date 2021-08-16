@@ -1,6 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.handler.remote;
 
-import com.life4ever.shadowsocks4j.proxy.handler.common.CommonHeartbeatHandler;
+import com.life4ever.shadowsocks4j.proxy.handler.common.HeartbeatTimeoutHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -25,7 +25,7 @@ public class RemoteServerChannelInitializer extends ChannelInitializer<SocketCha
     protected void initChannel(SocketChannel channel) throws Exception {
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast(new IdleStateHandler(SERVER_READ_IDLE_TIME, SERVER_WRITE_IDLE_TIME, SERVER_ALL_IDLE_TIME, TimeUnit.MILLISECONDS));
-        pipeline.addLast(CommonHeartbeatHandler.getInstance());
+        pipeline.addLast(HeartbeatTimeoutHandler.getInstance());
         pipeline.addLast(RemoteServerAddressHandler.getInstance(clientWorkerGroup));
     }
 

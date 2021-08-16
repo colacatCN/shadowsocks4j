@@ -22,7 +22,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
-    private static volatile RemoteServerAddressHandler INSTANCE;
+    private static volatile RemoteServerAddressHandler instance;
 
     private final EventLoopGroup clientWorkerGroup;
 
@@ -73,14 +73,14 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
     }
 
     public static RemoteServerAddressHandler getInstance(EventLoopGroup clientWorkerGroup) {
-        if (INSTANCE == null) {
+        if (instance == null) {
             synchronized (RemoteServerAddressHandler.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new RemoteServerAddressHandler(clientWorkerGroup);
+                if (instance == null) {
+                    instance = new RemoteServerAddressHandler(clientWorkerGroup);
                 }
             }
         }
-        return INSTANCE;
+        return instance;
     }
 
 }

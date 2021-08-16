@@ -31,7 +31,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
-    private static volatile Socks5CommandRequestHandler INSTANCE;
+    private static volatile Socks5CommandRequestHandler instance;
 
     private final EventLoopGroup clientWorkerGroup;
 
@@ -108,14 +108,14 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     }
 
     public static Socks5CommandRequestHandler getInstance(EventLoopGroup clientWorkerGroup) {
-        if (INSTANCE == null) {
+        if (instance == null) {
             synchronized (Socks5CommandRequestHandler.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new Socks5CommandRequestHandler(clientWorkerGroup);
+                if (instance == null) {
+                    instance = new Socks5CommandRequestHandler(clientWorkerGroup);
                 }
             }
         }
-        return INSTANCE;
+        return instance;
     }
 
 }

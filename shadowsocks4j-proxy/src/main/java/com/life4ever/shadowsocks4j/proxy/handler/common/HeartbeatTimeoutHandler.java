@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketAddress;
 
 @ChannelHandler.Sharable
-public class CommonHeartbeatHandler extends ChannelInboundHandlerAdapter {
+public class HeartbeatTimeoutHandler extends ChannelInboundHandlerAdapter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CommonHeartbeatHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HeartbeatTimeoutHandler.class);
 
-    private CommonHeartbeatHandler() {
+    private HeartbeatTimeoutHandler() {
     }
 
     @Override
@@ -30,13 +30,13 @@ public class CommonHeartbeatHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public static CommonHeartbeatHandler getInstance() {
-        return CommonHeartbeatHandlerHolder.INSTANCE;
+    public static HeartbeatTimeoutHandler getInstance() {
+        return HeartbeatTimeoutHandlerHolder.INSTANCE;
     }
 
-    private static class CommonHeartbeatHandlerHolder {
+    private static class HeartbeatTimeoutHandlerHolder {
 
-        private static final CommonHeartbeatHandler INSTANCE = new CommonHeartbeatHandler();
+        private static final HeartbeatTimeoutHandler INSTANCE = new HeartbeatTimeoutHandler();
 
     }
 

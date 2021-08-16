@@ -1,6 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
-import com.life4ever.shadowsocks4j.proxy.handler.common.CommonHeartbeatHandler;
+import com.life4ever.shadowsocks4j.proxy.handler.common.HeartbeatTimeoutHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
@@ -33,7 +33,7 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // heartbeat
         pipeline.addLast(new IdleStateHandler(SERVER_READ_IDLE_TIME, SERVER_WRITE_IDLE_TIME, SERVER_ALL_IDLE_TIME, TimeUnit.MILLISECONDS));
-        pipeline.addLast(CommonHeartbeatHandler.getInstance());
+        pipeline.addLast(HeartbeatTimeoutHandler.getInstance());
 
         // init
         pipeline.addLast(new Socks5InitialRequestDecoder());
