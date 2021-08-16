@@ -1,6 +1,7 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
+import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
@@ -54,12 +55,6 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         relayToRemoteServer(ctx, msg);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOG.error(cause.getMessage(), cause);
-        ctx.channel().close();
-    }
-
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         Bootstrap bootstrap = new Bootstrap();
 
@@ -71,6 +66,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
                         pipeline.addLast(new RemoteToLocalHandler(ctx));
+                        pipeline.addLast(ExceptionCaughtHandler.getInstance());
                     }
 
                 });
@@ -84,6 +80,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                             LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
                             ChannelPipeline pipeline = ctx.channel().pipeline();
                             pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
+                            pipeline.addLast(ExceptionCaughtHandler.getInstance());
                             socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                         } else {
                             LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
@@ -98,6 +95,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                         Socks5CommandResponse socks5CommandResponse;
                         if (channelFuture.isSuccess()) {
                             LOG.info("Succeed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                            ChannelPipeline pipeline = ctx.channel().pipeline();
+                            pipeline.addLast(ExceptionCaughtHandler.getInstance());
                             socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                         } else {
                             LOG.error("Failed to connect to target-server @ {}.", targetServerInetSocketAddress);

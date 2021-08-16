@@ -11,6 +11,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
+import io.netty.util.ReferenceCountUtil;
 
 import java.net.InetSocketAddress;
 
@@ -35,6 +36,7 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
         // 解密
         byte[] decryptedBytes = decrypt(ByteBufUtil.getBytes(byteBuf));
+        ReferenceCountUtil.release(msg);
 
         // 解析
         ByteBuf decryptedByteBuf = Unpooled.buffer();

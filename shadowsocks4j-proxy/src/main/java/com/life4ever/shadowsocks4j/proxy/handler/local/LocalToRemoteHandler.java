@@ -8,6 +8,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest;
 import io.netty.util.NetUtil;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
             ByteBuf byteBufWithTargetAddress = parseSocks5CommandRequest(socks5CommandRequest);
             byteBufWithTargetAddress.writeBytes(byteBuf);
             byteBuf = byteBufWithTargetAddress;
+            ReferenceCountUtil.release(msg);
             isInitOk = true;
         }
         localServerChannelFuture.channel().writeAndFlush(byteBuf);
