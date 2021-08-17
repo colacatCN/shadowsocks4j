@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LOOPBACK_ADDRESS;
+import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.LOOPBACK_ADDRESS;
 
 @Ignore
 public class Shadowsocks4jServerTest {

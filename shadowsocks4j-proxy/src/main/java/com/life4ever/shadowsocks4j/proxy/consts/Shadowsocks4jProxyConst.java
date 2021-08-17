@@ -24,7 +24,7 @@ public class Shadowsocks4jProxyConst {
 
     public static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j FileMonitor";
 
-    public static final String LOOPBACK_ADDRESS = "127.0.0.1";
+    public static final long FILE_MODIFY_EVENT_DELAY_TIME = 1000L;
 
     public static final String DEFAULT_CIPHER_METHOD = "aes_128_gcm";
 
@@ -32,19 +32,9 @@ public class Shadowsocks4jProxyConst {
 
     public static final String REMOTE_SERVER_SERVICE_NAME = "remote-server";
 
-    public static final int IPV4_ADDRESS_BYTE_LENGTH = 4;
-
-    public static final int IPV6_ADDRESS_BYTE_LENGTH = 16;
-
     public static final String LINE_FEED = "\n";
 
     public static final String BLANK_STRING = "";
-
-    public static final long SERVER_READ_IDLE_TIME = 5 * 60 * 1000L;
-
-    public static final long SERVER_WRITE_IDLE_TIME = 5 * 60 * 1000L;
-
-    public static final long SERVER_ALL_IDLE_TIME = 5 * 60 * 1000L;
 
     private Shadowsocks4jProxyConst() {
     }

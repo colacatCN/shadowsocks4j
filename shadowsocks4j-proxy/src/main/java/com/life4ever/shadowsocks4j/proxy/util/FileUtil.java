@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
+import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.FILE_MODIFY_EVENT_DELAY_TIME;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.FILE_MONITOR_THREAD_NAME;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_CONF_DIR;
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
@@ -36,6 +37,8 @@ public class FileUtil {
     private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 
     private static Map<String, FileEventCallback> fileEventCallbackMap;
+
+    private static Map<String, Long> lastModifyTimeMap;
 
     private FileUtil() {
     }
@@ -79,6 +82,9 @@ public class FileUtil {
         fileEventCallbackMap = fileEventCallbackList.stream()
                 .collect(Collectors.toConcurrentMap(FileEventCallback::getFileName, fileEventCallback -> fileEventCallback));
 
+        lastModifyTimeMap = fileEventCallbackList.stream()
+                .collect(Collectors.toConcurrentMap(FileEventCallback::getFileName, fileEventCallback -> 0L));
+
         Thread thread = new Thread(() -> {
             try {
                 WatchService watchService = FileSystems.getDefault().newWatchService();
@@ -104,20 +110,23 @@ public class FileUtil {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
                 String fileName = ((Path) watchEvent.context()).getFileName().toString();
                 FileEventCallback fileEventCallback = fileEventCallbackMap.get(fileName);
+                long lastModifyTime = lastModifyTimeMap.get(fileName);
 
                 if (fileEventCallback == null) {
                     break;
                 }
 
                 if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
-                    LOG.info("Trigger file {} creation event.", fileName);
+                    LOG.info("Trigger file {} create event.", fileName);
                     fileEventCallback.resolveCreateEvent();
                 } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
-                    LOG.info("Trigger file {} deletion event.", fileName);
+                    LOG.info("Trigger file {} delete event.", fileName);
                     fileEventCallback.resolveDeleteEvent();
-                } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
-                    LOG.info("Trigger file {} modification event.", fileName);
+                } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)
+                        && ((getCurrentTime() - lastModifyTime >= FILE_MODIFY_EVENT_DELAY_TIME) || lastModifyTime == 0L)) {
+                    LOG.info("Trigger file {} modify event.", fileName);
                     fileEventCallback.resolveModifyEvent();
+                    lastModifyTimeMap.put(fileName, getCurrentTime());
                 }
             }
             watchKey.reset();
@@ -125,6 +134,10 @@ public class FileUtil {
             Thread.currentThread().interrupt();
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
+    }
+
+    private static long getCurrentTime() {
+        return System.currentTimeMillis();
     }
 
 }

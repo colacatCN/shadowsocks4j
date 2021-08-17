@@ -15,8 +15,8 @@ import io.netty.util.ReferenceCountUtil;
 
 import java.net.InetSocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV4_ADDRESS_BYTE_LENGTH;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.IPV6_ADDRESS_BYTE_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.IPV4_ADDRESS_BYTE_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.IPV6_ADDRESS_BYTE_LENGTH;
 import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
 
 @ChannelHandler.Sharable

@@ -69,7 +69,7 @@ public class ConfigUtil {
 
     private static final Lock LOCK = new ReentrantLock();
 
-    private static ShadowsocksProxyModeEnum proxyMode;
+    private static ShadowsocksProxyModeEnum proxyMode = ShadowsocksProxyModeEnum.LOCAL;
 
     static {
         try {
