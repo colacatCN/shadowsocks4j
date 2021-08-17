@@ -12,7 +12,6 @@
 
     <modules>
         <module>shadowsocks4j-proxy</module>
-        <module>shadowsocks4j-cipher</module>
         <module>shadowsocks4j-web</module>
     </modules>
 
@@ -98,25 +97,14 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.4</version>
-                    <configuration>
-                        <createDependencyReducedPom>false</createDependencyReducedPom>
-                    </configuration>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.version}</version>
                     <executions>
                         <execution>
-                            <phase>package</phase>
                             <goals>
-                                <goal>shade</goal>
+                                <goal>repackage</goal>
                             </goals>
-                            <configuration>
-                                <transformers>
-                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                        <mainClass>com.life4ever.shadowsocks4j.proxy.Shadowsocks4jProxyApplication</mainClass>
-                                    </transformer>
-                                </transformers>
-                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

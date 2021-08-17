@@ -31,8 +31,11 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.life4ever.shadowsocks4j.proxy.Shadowsocks4jProxyApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>
