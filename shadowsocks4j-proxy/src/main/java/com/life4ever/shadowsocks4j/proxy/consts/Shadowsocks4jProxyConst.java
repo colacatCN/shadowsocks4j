@@ -18,7 +18,7 @@ public class Shadowsocks4jProxyConst {
 
     public static final String DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL = "https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt";
 
-    public static final Long DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL = 60 * 60 * 1000L;
+    public static final long DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL = 60 * 60 * 1000L;
 
     public static final String USER_RULE_TXT_LOCATION = SHADOWSOCKS4J_CONF_DIR + USER_RULE_TXT;
 
@@ -40,11 +40,11 @@ public class Shadowsocks4jProxyConst {
 
     public static final String BLANK_STRING = "";
 
-    public static final Long SERVER_READ_IDLE_TIME = 5 * 60 * 1000L;
+    public static final long SERVER_READ_IDLE_TIME = 5 * 60 * 1000L;
 
-    public static final Long SERVER_WRITE_IDLE_TIME = 5 * 60 * 1000L;
+    public static final long SERVER_WRITE_IDLE_TIME = 5 * 60 * 1000L;
 
-    public static final Long SERVER_ALL_IDLE_TIME = 5 * 60 * 1000L;
+    public static final long SERVER_ALL_IDLE_TIME = 5 * 60 * 1000L;
 
     private Shadowsocks4jProxyConst() {
     }
