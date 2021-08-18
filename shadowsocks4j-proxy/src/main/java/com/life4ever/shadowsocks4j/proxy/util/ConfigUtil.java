@@ -30,13 +30,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_CIPHER_METHOD;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.LINE_FEED;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SYSTEM_RULE_TXT_LOCATION;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_CIPHER_METHOD;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SYSTEM_RULE_TXT_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_STRING;
+import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.LINE_FEED;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
@@ -48,8 +48,6 @@ import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.updateFile;
 import static com.life4ever.shadowsocks4j.proxy.util.HttpClientUtil.execute;
 
 public class ConfigUtil {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
 
     private static final AtomicReference<ServerConfig> LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
@@ -70,6 +68,8 @@ public class ConfigUtil {
     private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
 
     private static final Lock LOCK = new ReentrantLock();
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
 
     private static ShadowsocksProxyModeEnum proxyMode;
 

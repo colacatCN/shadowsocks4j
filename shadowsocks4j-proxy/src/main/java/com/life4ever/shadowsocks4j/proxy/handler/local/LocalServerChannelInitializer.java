@@ -12,9 +12,9 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.SERVER_ALL_IDLE_TIME;
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.SERVER_READ_IDLE_TIME;
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.SERVER_WRITE_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_ALL_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_READ_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_WRITE_IDLE_TIME;
 
 public class LocalServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 

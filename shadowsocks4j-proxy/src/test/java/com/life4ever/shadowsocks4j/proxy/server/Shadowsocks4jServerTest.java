@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.LOOPBACK_ADDRESS;
-
 @Ignore
 public class Shadowsocks4jServerTest {
+
+    private static final String LOOPBACK_ADDRESS = "127.0.0.1";
 
     private static final Logger LOG = LoggerFactory.getLogger(Shadowsocks4jServerTest.class);
 

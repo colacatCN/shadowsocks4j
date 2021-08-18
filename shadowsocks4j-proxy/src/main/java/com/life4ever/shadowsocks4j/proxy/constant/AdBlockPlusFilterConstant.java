@@ -1,8 +1,8 @@
-package com.life4ever.shadowsocks4j.proxy.consts;
+package com.life4ever.shadowsocks4j.proxy.constant;
 
 import java.util.regex.Pattern;
 
-public class AdBlockPlusFilterConst {
+public class AdBlockPlusFilterConstant {
 
     public static final Pattern DOMAIN_NAME_PRECISE_PATTERN = Pattern.compile("(^@@\\|https?://)(.*)");
 
@@ -10,7 +10,7 @@ public class AdBlockPlusFilterConst {
 
     public static final String WHITE_LIST_START_FLAG = "Whitelist Start";
 
-    private AdBlockPlusFilterConst() {
+    private AdBlockPlusFilterConstant() {
     }
 
 }

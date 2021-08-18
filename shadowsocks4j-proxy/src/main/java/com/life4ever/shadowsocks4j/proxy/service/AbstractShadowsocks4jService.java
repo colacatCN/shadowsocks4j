@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.RUNTIME_AVAILABLE_PROCESSORS;
-
 public abstract class AbstractShadowsocks4jService implements IShadowsocks4jService {
+
+    private static final int RUNTIME_AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     protected final Logger LOG = LoggerFactory.getLogger(getClass());
 

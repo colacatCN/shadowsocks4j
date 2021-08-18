@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.HTTP_CLIENT_CONNECT_TIMEOUT;
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.HTTP_CLIENT_READ_TIMEOUT;
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.HTTP_CLIENT_WRITE_TIMEOUT;
-
 public class HttpClientUtil {
+
+    private static final long CONNECT_TIMEOUT = 60 * 1000L;
+
+    private static final long READ_TIMEOUT = 60 * 1000L;
+
+    private static final long WRITE_TIMEOUT = 60 * 1000L;
 
     private static OkHttpClient okHttpClient;
 
@@ -37,9 +39,9 @@ public class HttpClientUtil {
     private static OkHttpClient getOkHttpClient() {
         if (okHttpClient == null) {
             okHttpClient = new OkHttpClient.Builder()
-                    .connectTimeout(HTTP_CLIENT_CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
-                    .readTimeout(HTTP_CLIENT_READ_TIMEOUT, TimeUnit.MILLISECONDS)
-                    .writeTimeout(HTTP_CLIENT_WRITE_TIMEOUT, TimeUnit.MILLISECONDS)
+                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
+                    .readTimeout(READ_TIMEOUT, TimeUnit.MILLISECONDS)
+                    .writeTimeout(WRITE_TIMEOUT, TimeUnit.MILLISECONDS)
                     .build();
         }
         return okHttpClient;

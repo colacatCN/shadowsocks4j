@@ -24,13 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.BLANK_STRING;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.FILE_MODIFY_EVENT_DELAY_TIME;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.FILE_MONITOR_THREAD_NAME;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_CONF_DIR;
-import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SHADOWSOCKS4J_CONF_DIR;
+import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
+import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_STRING;
 
 public class FileUtil {
+
+    private static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j FileMonitor";
+
+    private static final long FILE_MODIFY_EVENT_DELAY_TIME = 1000L;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

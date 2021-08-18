@@ -15,12 +15,14 @@ import io.netty.util.ReferenceCountUtil;
 
 import java.net.InetSocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.IPV4_ADDRESS_BYTE_LENGTH;
-import static com.life4ever.shadowsocks4j.proxy.consts.NetworkConst.IPV6_ADDRESS_BYTE_LENGTH;
 import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
 
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
+
+    private static final int IPV4_ADDRESS_BYTES_LENGTH = 4;
+
+    private static final int IPV6_ADDRESS_BYTES_LENGTH = 16;
 
     private static volatile RemoteServerAddressHandler instance;
 
@@ -56,11 +58,11 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         String host;
         byte socks5AddressType = byteBuf.readByte();
         if (Socks5AddressType.IPv4.byteValue() == socks5AddressType) {
-            byte[] ipv4Bytes = new byte[IPV4_ADDRESS_BYTE_LENGTH];
+            byte[] ipv4Bytes = new byte[IPV4_ADDRESS_BYTES_LENGTH];
             byteBuf.readBytes(ipv4Bytes);
             host = NetUtil.bytesToIpAddress(ipv4Bytes);
         } else if (Socks5AddressType.IPv6.byteValue() == socks5AddressType) {
-            byte[] ipv6Bytes = new byte[IPV6_ADDRESS_BYTE_LENGTH];
+            byte[] ipv6Bytes = new byte[IPV6_ADDRESS_BYTES_LENGTH];
             byteBuf.readBytes(ipv6Bytes);
             host = NetUtil.bytesToIpAddress(ipv6Bytes);
         } else {
