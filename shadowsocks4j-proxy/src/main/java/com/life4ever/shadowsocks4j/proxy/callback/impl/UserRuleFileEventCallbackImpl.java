@@ -8,14 +8,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
 
-import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
-import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.clearUserRuleWhiteMap;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.lockWhiteList;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.matchDomainName;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.unlockWhiteList;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updateFuzzyDomainNameWhiteSet;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updatePreciseDomainNameWhiteSet;
@@ -45,17 +43,8 @@ public class UserRuleFileEventCallbackImpl implements FileEventCallback {
             Set<String> fuzzyDomainNameWhiteList = new HashSet<>(128);
 
             String line;
-            String domainName;
             while ((line = bufferedReader.readLine()) != null) {
-                Matcher matcher = DOMAIN_NAME_PRECISE_PATTERN.matcher(line);
-                if (matcher.find() && (domainName = matcher.group(2)) != null) {
-                    preciseDomainNameWhiteList.add(domainName);
-                    continue;
-                }
-                matcher = DOMAIN_NAME_FUZZY_PATTERN.matcher(line);
-                if (matcher.find() && (domainName = matcher.group(2)) != null) {
-                    fuzzyDomainNameWhiteList.add(domainName);
-                }
+                matchDomainName(line, preciseDomainNameWhiteList, fuzzyDomainNameWhiteList);
             }
 
             updatePreciseDomainNameWhiteSet(preciseDomainNameWhiteList, false);

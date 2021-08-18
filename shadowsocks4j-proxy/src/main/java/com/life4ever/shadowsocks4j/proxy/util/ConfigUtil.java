@@ -29,7 +29,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
 
+import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
+import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_CIPHER_METHOD;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
@@ -63,7 +66,7 @@ public class ConfigUtil {
 
     private static final Set<String> PRECISE_DOMAIN_NAME_WHITE_SET = new HashSet<>(32);
 
-    private static final Set<String> FUZZY_DOMAIN_NAME_WHITE_SET = new HashSet<>(512);
+    private static final Set<String> FUZZY_DOMAIN_NAME_WHITE_SET = new HashSet<>(256);
 
     private static final ScheduledThreadPoolExecutor SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1);
 
@@ -178,30 +181,41 @@ public class ConfigUtil {
         }
     }
 
-    public static void updatePreciseDomainNameWhiteSet(Set<String> updatedPreciseDomainNameWhiteSet, boolean updateSystemRule) {
-        Set<String> oldPreciseDomainNameWhiteSet;
-        if (updateSystemRule) {
-            oldPreciseDomainNameWhiteSet = SYSTEM_RULE_WHITE_MAP.computeIfAbsent(PRECISE, matcherMode -> new HashSet<>(16));
-            SYSTEM_RULE_WHITE_MAP.put(PRECISE, updatedPreciseDomainNameWhiteSet);
-        } else {
-            oldPreciseDomainNameWhiteSet = USER_RULE_WHITE_MAP.computeIfAbsent(PRECISE, matcherMode -> new HashSet<>(16));
-            USER_RULE_WHITE_MAP.put(PRECISE, updatedPreciseDomainNameWhiteSet);
+    public static void matchDomainName(String rule, Set<String> preciseDomainNameWhiteList, Set<String> fuzzyDomainNameWhiteList) {
+        String domainName;
+        Matcher matcher = DOMAIN_NAME_PRECISE_PATTERN.matcher(rule);
+        if (matcher.find() && (domainName = matcher.group(2)) != null) {
+            preciseDomainNameWhiteList.add(domainName);
+            return;
         }
+        matcher = DOMAIN_NAME_FUZZY_PATTERN.matcher(rule);
+        if (matcher.find() && (domainName = matcher.group(2)) != null) {
+            fuzzyDomainNameWhiteList.add(domainName);
+        }
+    }
+
+    public static void updatePreciseDomainNameWhiteSet(Set<String> updatedPreciseDomainNameWhiteSet, boolean updateSystemRule) {
+        Set<String> oldPreciseDomainNameWhiteSet = updateWhiteMap(updatedPreciseDomainNameWhiteSet, PRECISE, updateSystemRule);
         PRECISE_DOMAIN_NAME_WHITE_SET.removeAll(oldPreciseDomainNameWhiteSet);
         PRECISE_DOMAIN_NAME_WHITE_SET.addAll(updatedPreciseDomainNameWhiteSet);
     }
 
     public static void updateFuzzyDomainNameWhiteSet(Set<String> updatedFuzzyDomainNameWhiteSet, boolean updateSystemRule) {
-        Set<String> oldFuzzyDomainNameWhiteSet;
-        if (updateSystemRule) {
-            oldFuzzyDomainNameWhiteSet = SYSTEM_RULE_WHITE_MAP.computeIfAbsent(FUZZY, matcherMode -> new HashSet<>(16));
-            SYSTEM_RULE_WHITE_MAP.put(FUZZY, updatedFuzzyDomainNameWhiteSet);
-        } else {
-            oldFuzzyDomainNameWhiteSet = USER_RULE_WHITE_MAP.computeIfAbsent(FUZZY, matcherMode -> new HashSet<>(16));
-            USER_RULE_WHITE_MAP.put(FUZZY, updatedFuzzyDomainNameWhiteSet);
-        }
+        Set<String> oldFuzzyDomainNameWhiteSet = updateWhiteMap(updatedFuzzyDomainNameWhiteSet, FUZZY, updateSystemRule);
         FUZZY_DOMAIN_NAME_WHITE_SET.removeAll(oldFuzzyDomainNameWhiteSet);
         FUZZY_DOMAIN_NAME_WHITE_SET.addAll(updatedFuzzyDomainNameWhiteSet);
+    }
+
+    private static Set<String> updateWhiteMap(Set<String> updatedDomainNameWhiteSet, MatcherModeEnum matcherMode, boolean updateSystemRule) {
+        Set<String> oldDomainNameWhiteSet;
+        if (updateSystemRule) {
+            oldDomainNameWhiteSet = SYSTEM_RULE_WHITE_MAP.computeIfAbsent(matcherMode, key -> new HashSet<>(32));
+            SYSTEM_RULE_WHITE_MAP.put(matcherMode, updatedDomainNameWhiteSet);
+        } else {
+            oldDomainNameWhiteSet = USER_RULE_WHITE_MAP.computeIfAbsent(matcherMode, key -> new HashSet<>(32));
+            USER_RULE_WHITE_MAP.put(matcherMode, updatedDomainNameWhiteSet);
+        }
+        return oldDomainNameWhiteSet;
     }
 
     public static void clearSystemRuleWhiteMap() {
