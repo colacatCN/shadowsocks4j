@@ -28,17 +28,17 @@ public class UserRuleFileEventCallbackImpl implements FileEventCallback {
     }
 
     @Override
-    public void resolveCreateEvent() throws Shadowsocks4jProxyException {
-        resolveModifyEvent();
+    public void onCreate() throws Shadowsocks4jProxyException {
+        onModify();
     }
 
     @Override
-    public void resolveDeleteEvent() {
+    public void onDelete() {
         clearUserRuleWhiteMap();
     }
 
     @Override
-    public void resolveModifyEvent() throws Shadowsocks4jProxyException {
+    public void onModify() throws Shadowsocks4jProxyException {
         lockWhiteList();
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(USER_RULE_TXT_LOCATION))) {
             Set<String> preciseDomainNameWhiteList = new HashSet<>(16);

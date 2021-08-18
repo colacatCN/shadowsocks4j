@@ -39,6 +39,8 @@ import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.S
 import static com.life4ever.shadowsocks4j.proxy.consts.Shadowsocks4jProxyConst.USER_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
+import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
+import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -69,18 +71,7 @@ public class ConfigUtil {
 
     private static final Lock LOCK = new ReentrantLock();
 
-    private static ShadowsocksProxyModeEnum proxyMode = ShadowsocksProxyModeEnum.LOCAL;
-
-    static {
-        try {
-            updateShadowsocks4jProxyConfig();
-            startFileWatchService(Arrays.asList(new Shadowsocks4jProxyFileCallbackImpl(),
-                    new SystemRuleFileEventCallbackImpl(),
-                    new UserRuleFileEventCallbackImpl()));
-        } catch (Shadowsocks4jProxyException e) {
-            LOG.error(e.getMessage(), e);
-        }
-    }
+    private static ShadowsocksProxyModeEnum proxyMode;
 
     private ConfigUtil() {
     }
@@ -102,7 +93,7 @@ public class ConfigUtil {
         updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
 
         // 更新 pac
-        if (ShadowsocksProxyModeEnum.LOCAL.equals(proxyMode)) {
+        if (LOCAL.equals(proxyMode)) {
             updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
         }
     }
@@ -233,16 +224,18 @@ public class ConfigUtil {
         return new InetSocketAddress(remoteServerConfig.getIp(), remoteServerConfig.getPort());
     }
 
-    public static ShadowsocksProxyModeEnum getProxyMode() {
-        return proxyMode;
+    public static void activateLocalMode() throws Shadowsocks4jProxyException {
+        proxyMode = LOCAL;
+        updateShadowsocks4jProxyConfig();
+        startFileWatchService(Arrays.asList(new Shadowsocks4jProxyFileCallbackImpl(),
+                new SystemRuleFileEventCallbackImpl(),
+                new UserRuleFileEventCallbackImpl()));
     }
 
-    public static void activateLocalMode() {
-        proxyMode = ShadowsocksProxyModeEnum.LOCAL;
-    }
-
-    public static void activateRemoteMode() {
-        proxyMode = ShadowsocksProxyModeEnum.REMOTE;
+    public static void activateRemoteMode() throws Shadowsocks4jProxyException {
+        proxyMode = REMOTE;
+        updateShadowsocks4jProxyConfig();
+        startFileWatchService(Collections.singletonList(new Shadowsocks4jProxyFileCallbackImpl()));
     }
 
     public static void lockWhiteList() {

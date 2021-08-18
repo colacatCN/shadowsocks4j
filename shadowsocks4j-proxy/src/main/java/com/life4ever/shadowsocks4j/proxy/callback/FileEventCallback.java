@@ -6,10 +6,10 @@ public interface FileEventCallback {
 
     String getFileName();
 
-    void resolveCreateEvent() throws Shadowsocks4jProxyException;
+    void onCreate() throws Shadowsocks4jProxyException;
 
-    void resolveDeleteEvent() throws Shadowsocks4jProxyException;
+    void onDelete() throws Shadowsocks4jProxyException;
 
-    void resolveModifyEvent() throws Shadowsocks4jProxyException;
+    void onModify() throws Shadowsocks4jProxyException;
 
 }

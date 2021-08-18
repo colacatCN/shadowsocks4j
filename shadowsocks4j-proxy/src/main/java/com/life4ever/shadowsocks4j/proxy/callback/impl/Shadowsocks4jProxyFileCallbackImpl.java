@@ -18,17 +18,17 @@ public class Shadowsocks4jProxyFileCallbackImpl implements FileEventCallback {
     }
 
     @Override
-    public void resolveCreateEvent() throws Shadowsocks4jProxyException {
-        resolveModifyEvent();
+    public void onCreate() throws Shadowsocks4jProxyException {
+        onModify();
     }
 
     @Override
-    public void resolveDeleteEvent() {
+    public void onDelete() {
         LOG.warn("The configuration file has been deleted.");
     }
 
     @Override
-    public void resolveModifyEvent() throws Shadowsocks4jProxyException {
+    public void onModify() throws Shadowsocks4jProxyException {
         updateShadowsocks4jProxyConfig();
     }
 

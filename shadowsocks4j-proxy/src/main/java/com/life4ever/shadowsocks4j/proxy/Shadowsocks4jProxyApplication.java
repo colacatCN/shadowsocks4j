@@ -6,6 +6,9 @@ import com.life4ever.shadowsocks4j.proxy.service.impl.Shadowsocks4jLocalServiceI
 import com.life4ever.shadowsocks4j.proxy.service.impl.Shadowsocks4jRemoteServiceImpl;
 
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
+import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateLocalMode;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
 
 public class Shadowsocks4jProxyApplication {
 
@@ -17,9 +20,13 @@ public class Shadowsocks4jProxyApplication {
         String proxyMode = args[0];
         IShadowsocks4jService shadowsocks4jService;
         if (LOCAL.getKey().equals(proxyMode)) {
+            activateLocalMode();
             shadowsocks4jService = new Shadowsocks4jLocalServiceImpl();
-        } else {
+        } else if (REMOTE.getKey().equals(proxyMode)) {
+            activateRemoteMode();
             shadowsocks4jService = new Shadowsocks4jRemoteServiceImpl();
+        } else {
+            throw new Shadowsocks4jProxyException("启动参数错误");
         }
         shadowsocks4jService.start();
     }

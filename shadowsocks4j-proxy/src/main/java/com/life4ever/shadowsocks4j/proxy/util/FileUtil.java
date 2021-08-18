@@ -80,10 +80,10 @@ public class FileUtil {
 
     public static void startFileWatchService(List<FileEventCallback> fileEventCallbackList) {
         fileEventCallbackMap = fileEventCallbackList.stream()
-                .collect(Collectors.toConcurrentMap(FileEventCallback::getFileName, fileEventCallback -> fileEventCallback));
+                .collect(Collectors.toMap(FileEventCallback::getFileName, fileEventCallback -> fileEventCallback));
 
         lastModifyTimeMap = fileEventCallbackList.stream()
-                .collect(Collectors.toConcurrentMap(FileEventCallback::getFileName, fileEventCallback -> 0L));
+                .collect(Collectors.toMap(FileEventCallback::getFileName, fileEventCallback -> 0L));
 
         Thread thread = new Thread(() -> {
             try {
@@ -110,7 +110,7 @@ public class FileUtil {
                 WatchEvent.Kind<?> kind = watchEvent.kind();
                 String fileName = ((Path) watchEvent.context()).getFileName().toString();
                 FileEventCallback fileEventCallback = fileEventCallbackMap.get(fileName);
-                long lastModifyTime = lastModifyTimeMap.get(fileName);
+                Long lastModifyTime = lastModifyTimeMap.get(fileName);
 
                 if (fileEventCallback == null) {
                     break;
@@ -118,14 +118,14 @@ public class FileUtil {
 
                 if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
                     LOG.info("Trigger file {} create event.", fileName);
-                    fileEventCallback.resolveCreateEvent();
+                    fileEventCallback.onCreate();
                 } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
                     LOG.info("Trigger file {} delete event.", fileName);
-                    fileEventCallback.resolveDeleteEvent();
+                    fileEventCallback.onDelete();
                 } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)
                         && ((getCurrentTime() - lastModifyTime >= FILE_MODIFY_EVENT_DELAY_TIME) || lastModifyTime == 0L)) {
                     LOG.info("Trigger file {} modify event.", fileName);
-                    fileEventCallback.resolveModifyEvent();
+                    fileEventCallback.onModify();
                     lastModifyTimeMap.put(fileName, getCurrentTime());
                 }
             }
