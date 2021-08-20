@@ -1,5 +1,8 @@
 package com.life4ever.shadowsocks4j.proxy.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ServerConfig {
 
     private String ip;

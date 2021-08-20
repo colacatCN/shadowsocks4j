@@ -15,7 +15,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import java.net.InetSocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.util.CryptoUtil.decrypt;
+import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.decrypt;
 
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {

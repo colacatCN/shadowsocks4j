@@ -111,6 +111,9 @@ public class ConfigUtil {
             // 检查 password（强制）
             cipherConfig.setPassword(Optional.ofNullable(newCipherConfig.getPassword())
                     .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher password is null.")));
+            // 检查 salt（强制）
+            cipherConfig.setSalt(Optional.ofNullable(newCipherConfig.getSalt())
+                    .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher salt is null.")));
             // 检查 method（可选）
             cipherConfig.setMethod(Optional.ofNullable(newCipherConfig.getMethod())
                     .orElse(DEFAULT_CIPHER_METHOD));
@@ -258,6 +261,14 @@ public class ConfigUtil {
 
     public static void unlockWhiteList() {
         LOCK.unlock();
+    }
+
+    public static String getCipherPassword() {
+        return CIPHER_CONFIG_ATOMIC_REFERENCE.get().getPassword();
+    }
+
+    public static String getCipherSalt() {
+        return CIPHER_CONFIG_ATOMIC_REFERENCE.get().getSalt();
     }
 
 }

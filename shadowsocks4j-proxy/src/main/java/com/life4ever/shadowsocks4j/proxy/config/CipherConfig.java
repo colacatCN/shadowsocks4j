@@ -1,8 +1,13 @@
 package com.life4ever.shadowsocks4j.proxy.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CipherConfig {
 
     private String password;
+
+    private String salt;
 
     private String method;
 
@@ -12,6 +17,14 @@ public class CipherConfig {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 
     public String getMethod() {
@@ -26,6 +39,7 @@ public class CipherConfig {
     public String toString() {
         return "CipherConfig{" +
                 "password='" + password + '\'' +
+                ", salt='" + salt + '\'' +
                 ", method='" + method + '\'' +
                 '}';
     }

@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
+
 @Ignore
 public class Shadowsocks4jRemoteServiceImplTest {
 
@@ -13,6 +15,7 @@ public class Shadowsocks4jRemoteServiceImplTest {
 
     @Test
     public void test() throws Shadowsocks4jProxyException {
+        activateRemoteMode();
         shadowsocks4jService = new Shadowsocks4jRemoteServiceImpl();
         shadowsocks4jService.start();
     }

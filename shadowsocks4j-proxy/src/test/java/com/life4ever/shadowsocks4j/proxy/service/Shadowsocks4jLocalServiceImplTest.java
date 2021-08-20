@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateLocalMode;
+
 @Ignore
 public class Shadowsocks4jLocalServiceImplTest {
 
@@ -13,6 +15,7 @@ public class Shadowsocks4jLocalServiceImplTest {
 
     @Test
     public void test() throws Shadowsocks4jProxyException {
+        activateLocalMode();
         shadowsocks4jService = new Shadowsocks4jLocalServiceImpl();
         shadowsocks4jService.start();
     }

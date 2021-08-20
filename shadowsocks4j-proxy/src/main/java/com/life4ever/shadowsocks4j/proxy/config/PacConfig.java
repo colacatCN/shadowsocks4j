@@ -1,7 +1,9 @@
 package com.life4ever.shadowsocks4j.proxy.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PacConfig {
 
     @JsonProperty("enable-pac-mode")
