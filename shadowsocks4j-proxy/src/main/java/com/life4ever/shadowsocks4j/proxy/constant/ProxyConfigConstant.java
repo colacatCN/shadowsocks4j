@@ -20,8 +20,6 @@ public class ProxyConfigConstant {
 
     public static final long DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL = 60 * 60 * 1000L;
 
-    public static final String DEFAULT_CIPHER_METHOD = "aes_128_gcm";
-
     private ProxyConfigConstant() {
     }
 

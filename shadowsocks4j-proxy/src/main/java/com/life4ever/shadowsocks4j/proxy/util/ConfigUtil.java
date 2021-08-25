@@ -7,6 +7,7 @@ import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
+import com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant;
 import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
@@ -33,7 +34,6 @@ import java.util.regex.Matcher;
 
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
-import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_CIPHER_METHOD;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SYSTEM_RULE_TXT_LOCATION;
@@ -44,6 +44,7 @@ import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.update;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -55,10 +56,6 @@ public class ConfigUtil {
     private static final AtomicReference<ServerConfig> LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
     private static final AtomicReference<ServerConfig> REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
-
-    private static final AtomicReference<CipherConfig> CIPHER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
-
-    private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
     private static final Map<MatcherModeEnum, Set<String>> SYSTEM_RULE_WHITE_MAP = new EnumMap<>(MatcherModeEnum.class);
 
@@ -73,6 +70,8 @@ public class ConfigUtil {
     private static final Lock LOCK = new ReentrantLock();
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
+
+    private static volatile boolean enablePacMode;
 
     private static ShadowsocksProxyModeEnum proxyMode;
 
@@ -102,55 +101,42 @@ public class ConfigUtil {
     }
 
     private static void updateCipherConfig(CipherConfig updatedCipherConfig) throws Shadowsocks4jProxyException {
-        CipherConfig cipherConfig = CIPHER_CONFIG_ATOMIC_REFERENCE.get();
-        if (cipherConfig == null) {
-            cipherConfig = new CipherConfig();
-            // 检查 updatedCipherConfig（强制）
-            CipherConfig newCipherConfig = Optional.ofNullable(updatedCipherConfig)
-                    .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher config is null."));
-            // 检查 password（强制）
-            cipherConfig.setPassword(Optional.ofNullable(newCipherConfig.getPassword())
-                    .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher password is null.")));
-            // 检查 salt（强制）
-            cipherConfig.setSalt(Optional.ofNullable(newCipherConfig.getSalt())
-                    .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher salt is null.")));
-            // 检查 method（可选）
-            cipherConfig.setMethod(Optional.ofNullable(newCipherConfig.getMethod())
-                    .orElse(DEFAULT_CIPHER_METHOD));
-            CIPHER_CONFIG_ATOMIC_REFERENCE.set(cipherConfig);
-        } else {
-            Optional.ofNullable(updatedCipherConfig)
-                    .ifPresent(CIPHER_CONFIG_ATOMIC_REFERENCE::set);
-        }
+        // 检查 updatedCipherConfig（强制）
+        CipherConfig newCipherConfig = Optional.ofNullable(updatedCipherConfig)
+                .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher config is null!"));
+        // 检查 password（强制）
+        String password = Optional.ofNullable(newCipherConfig.getPassword())
+                .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher password is null!"));
+        // 检查 salt（可选）
+        String salt = Optional.ofNullable(newCipherConfig.getSalt())
+                .orElseGet(() -> new StringBuilder(password).reverse().toString());
+        // 检查 method（可选）
+        String method = Optional.ofNullable(newCipherConfig.getMethod())
+                .orElse(AEADCipherAlgorithmConstant.DEFAULT_CIPHER_METHOD);
+        // 更新 CipherUtil
+        update(password, salt, method);
     }
 
     private static void updatePacConfig(PacConfig updatedPacConfig) throws Shadowsocks4jProxyException {
-        PacConfig pacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
-        if (pacConfig == null) {
-            pacConfig = new PacConfig();
-            // 检查 updatedPacConfig
-            PacConfig newPacConfig = Optional.ofNullable(updatedPacConfig)
-                    .orElseGet(() -> new PacConfig(Boolean.FALSE));
-            // 检查 enablePacMode
-            boolean enablePacMode = Optional.ofNullable(newPacConfig.isEnablePacMode())
-                    .orElse(Boolean.FALSE);
-            pacConfig.setEnablePacMode(enablePacMode);
-            if (enablePacMode) {
-                // 检查 updateUrl（可选）
-                pacConfig.setUpdateUrl(Optional.ofNullable(newPacConfig.getUpdateUrl())
-                        .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL));
-                // 检查 updateInterval（可选）
-                pacConfig.setUpdateInterval(Optional.ofNullable(newPacConfig.getUpdateInterval())
-                        .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL));
-                // 创建 system-rule.txt，并启动更新定时器
-                startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
-                // 创建 user-rule.txt
-                createRuleFile(USER_RULE_TXT_LOCATION);
-            }
-            PAC_CONFIG_ATOMIC_REFERENCE.set(pacConfig);
-        } else {
-            Optional.ofNullable(updatedPacConfig)
-                    .ifPresent(PAC_CONFIG_ATOMIC_REFERENCE::set);
+        // 检查 updatedPacConfig
+        PacConfig newPacConfig = Optional.ofNullable(updatedPacConfig)
+                .orElseGet(() -> new PacConfig(Boolean.FALSE));
+
+        // 检查 enablePacMode
+        enablePacMode = Optional.ofNullable(newPacConfig.isEnablePacMode())
+                .orElse(Boolean.FALSE);
+
+        if (enablePacMode && SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.isTerminated()) {
+            // 检查 updateUrl（可选）
+            String updateUrl = Optional.ofNullable(newPacConfig.getUpdateUrl())
+                    .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL);
+            // 检查 updateInterval（可选）
+            long updateInterval = Optional.ofNullable(newPacConfig.getUpdateInterval())
+                    .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL);
+            startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, updateUrl, updateInterval);
+            createRuleFile(USER_RULE_TXT_LOCATION);
+        } else if (!enablePacMode && !SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.isTerminated()) {
+            SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.shutdown();
         }
     }
 
@@ -171,6 +157,10 @@ public class ConfigUtil {
     }
 
     public static boolean needRelayToRemoteServer(String domainName) {
+        if (!enablePacMode) {
+            return true;
+        }
+
         LOCK.lock();
         try {
             if (PRECISE_DOMAIN_NAME_WHITE_SET.contains(domainName)) {
@@ -261,14 +251,6 @@ public class ConfigUtil {
 
     public static void unlockWhiteList() {
         LOCK.unlock();
-    }
-
-    public static String getCipherPassword() {
-        return CIPHER_CONFIG_ATOMIC_REFERENCE.get().getPassword();
-    }
-
-    public static String getCipherSalt() {
-        return CIPHER_CONFIG_ATOMIC_REFERENCE.get().getSalt();
     }
 
 }

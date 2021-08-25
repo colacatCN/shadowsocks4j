@@ -1,5 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.util;
 
+import com.life4ever.shadowsocks4j.proxy.enums.AEADCipherAlgorithmEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 
 import javax.crypto.BadPaddingException;
@@ -17,9 +18,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.regex.Matcher;
 
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getCipherPassword;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getCipherSalt;
+import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.AES;
+import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.MAX_SECRET_KEY_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.SECRET_KEY_LENGTH_PATTERN;
+import static com.life4ever.shadowsocks4j.proxy.enums.AEADCipherAlgorithmEnum.AES_128_GCM;
+import static com.life4ever.shadowsocks4j.proxy.enums.AEADCipherAlgorithmEnum.AES_256_GCM;
+import static com.life4ever.shadowsocks4j.proxy.enums.AEADCipherAlgorithmEnum.CHACHA20_POLY1305;
 
 public class CipherUtil {
 
@@ -31,12 +37,34 @@ public class CipherUtil {
 
     private static volatile SecretKey secretKey;
 
+    private static String password;
+
+    private static String salt;
+
+    private static AEADCipherAlgorithmEnum aeadCipherAlgorithm;
+
     private CipherUtil() {
+    }
+
+    public static void update(String updatedPassword, String updatedSalt, String updatedMethod) {
+        password = updatedPassword;
+        salt = updatedSalt;
+        aeadCipherAlgorithm = AES_128_GCM;
+
+        Matcher matcher = SECRET_KEY_LENGTH_PATTERN.matcher(updatedMethod);
+        if (matcher.find()) {
+            int keyLength = findSuitableKeyLength(Integer.parseInt(matcher.group()));
+            if (updatedMethod.startsWith(AES) && keyLength == AES_256_GCM.getKeyLength()) {
+                aeadCipherAlgorithm = AES_256_GCM;
+            } else {
+                aeadCipherAlgorithm = CHACHA20_POLY1305;
+            }
+        }
     }
 
     public static byte[] encrypt(byte[] content) throws Shadowsocks4jProxyException {
         try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            Cipher cipher = Cipher.getInstance(aeadCipherAlgorithm.getMode());
 
             // 生成 iv
             byte[] iv = new byte[DEFAULT_AES_GCM_IV_BYTES_LENGTH];
@@ -44,7 +72,7 @@ public class CipherUtil {
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(DEFAULT_AES_GCM_TAG_BITS_LENGTH, iv);
 
             // 生成密钥
-            SecretKey secretKey = getSecretKeyFromPassword(getCipherPassword(), getCipherSalt());
+            SecretKey secretKey = getSecretKeyFromPassword(password, salt);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmParameterSpec);
 
             // iv + 密文
@@ -57,9 +85,9 @@ public class CipherUtil {
 
     public static byte[] decrypt(byte[] encryptedContent) throws Shadowsocks4jProxyException {
         try {
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            Cipher cipher = Cipher.getInstance(aeadCipherAlgorithm.getMode());
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(DEFAULT_AES_GCM_TAG_BITS_LENGTH, encryptedContent, 0, DEFAULT_AES_GCM_IV_BYTES_LENGTH);
-            cipher.init(Cipher.DECRYPT_MODE, getSecretKeyFromPassword(getCipherPassword(), getCipherSalt()), gcmParameterSpec);
+            cipher.init(Cipher.DECRYPT_MODE, getSecretKeyFromPassword(password, salt), gcmParameterSpec);
             return cipher.doFinal(encryptedContent, DEFAULT_AES_GCM_IV_BYTES_LENGTH, encryptedContent.length - DEFAULT_AES_GCM_IV_BYTES_LENGTH);
         } catch (InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | InvalidKeyException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
@@ -84,6 +112,11 @@ public class CipherUtil {
         System.arraycopy(iv, 0, bytes, 0, iv.length);
         System.arraycopy(encryptedContent, 0, bytes, iv.length, encryptedContent.length);
         return bytes;
+    }
+
+    private static int findSuitableKeyLength(int length) {
+        int n = -1 >>> Integer.numberOfLeadingZeros(length - 1);
+        return (n < 0) ? 1 : (n >= MAX_SECRET_KEY_LENGTH) ? MAX_SECRET_KEY_LENGTH : n + 1;
     }
 
 }
