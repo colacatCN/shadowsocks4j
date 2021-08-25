@@ -6,7 +6,9 @@ public class AEADCipherAlgorithmConstant {
 
     public static final String AES = "aes";
 
-    public static final String CHACHA20 = "chacha20";
+    public static final String AES_GCM_NOPADDING = "AES/GCM/NoPadding";
+
+    public static final String CHACHA20_POLY1305 = "ChaCha20-poly1305";
 
     public static final String DEFAULT_CIPHER_METHOD = "aes-128-gcm";
 
