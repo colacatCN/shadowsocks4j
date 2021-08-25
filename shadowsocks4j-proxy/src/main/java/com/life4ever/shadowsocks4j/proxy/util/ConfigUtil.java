@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +58,8 @@ public class ConfigUtil {
 
     private static final AtomicReference<ServerConfig> REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
+    private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
+
     private static final Map<MatcherModeEnum, Set<String>> SYSTEM_RULE_WHITE_MAP = new EnumMap<>(MatcherModeEnum.class);
 
     private static final Map<MatcherModeEnum, Set<String>> USER_RULE_WHITE_MAP = new EnumMap<>(MatcherModeEnum.class);
@@ -71,9 +74,15 @@ public class ConfigUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
 
-    private static volatile boolean enablePacMode;
-
     private static ShadowsocksProxyModeEnum proxyMode;
+
+    private static ScheduledFuture<?> scheduledFuture;
+
+    private static boolean schedulerIsRunning;
+
+    static {
+        SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.setRemoveOnCancelPolicy(true);
+    }
 
     private ConfigUtil() {
     }
@@ -118,31 +127,35 @@ public class ConfigUtil {
     }
 
     private static void updatePacConfig(PacConfig updatedPacConfig) throws Shadowsocks4jProxyException {
-        // 检查 updatedPacConfig
         PacConfig newPacConfig = Optional.ofNullable(updatedPacConfig)
                 .orElseGet(() -> new PacConfig(Boolean.FALSE));
 
-        // 检查 enablePacMode
-        enablePacMode = Optional.ofNullable(newPacConfig.isEnablePacMode())
+        boolean enablePacMode = Optional.ofNullable(newPacConfig.isEnablePacMode())
                 .orElse(Boolean.FALSE);
 
-        if (enablePacMode && SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.isTerminated()) {
-            // 检查 updateUrl（可选）
-            String updateUrl = Optional.ofNullable(newPacConfig.getUpdateUrl())
-                    .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL);
-            // 检查 updateInterval（可选）
-            long updateInterval = Optional.ofNullable(newPacConfig.getUpdateInterval())
-                    .orElse(DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL);
-            startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, updateUrl, updateInterval);
-            createRuleFile(USER_RULE_TXT_LOCATION);
-        } else if (!enablePacMode && !SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.isTerminated()) {
-            SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.shutdown();
+        if (!enablePacMode && schedulerIsRunning) {
+            shutdownSystemRuleFileScheduler();
         }
+
+        PacConfig pacConfig = new PacConfig(enablePacMode);
+        if (enablePacMode) {
+            if (schedulerIsRunning) {
+                shutdownSystemRuleFileScheduler();
+            }
+            PacConfig oldPacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
+            pacConfig.setUpdateUrl(Optional.ofNullable(newPacConfig.getUpdateUrl())
+                    .orElseGet(() -> oldPacConfig.getUpdateUrl() == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldPacConfig.getUpdateUrl()));
+            pacConfig.setUpdateInterval(Optional.ofNullable(newPacConfig.getUpdateInterval())
+                    .orElseGet(() -> oldPacConfig.getUpdateInterval() == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL : oldPacConfig.getUpdateInterval()));
+            startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
+            createRuleFile(USER_RULE_TXT_LOCATION);
+        }
+        PAC_CONFIG_ATOMIC_REFERENCE.set(pacConfig);
     }
 
-    private static void startSystemRuleFileScheduler(String fileLocation, String updateUrl, Long updateInterval) throws Shadowsocks4jProxyException {
+    private static void startSystemRuleFileScheduler(String fileLocation, String updateUrl, long updateInterval) throws Shadowsocks4jProxyException {
         createRuleFile(fileLocation);
-        SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(
+        scheduledFuture = SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
                         String base64EncodedString = execute(updateUrl);
@@ -153,10 +166,18 @@ public class ConfigUtil {
                     }
                 }
                 , 0L, updateInterval, TimeUnit.MILLISECONDS);
-        LOG.info("Start scheduled executor service for system rule.");
+        schedulerIsRunning = true;
+        LOG.info("Start scheduled task for system-rule.txt");
+    }
+
+    private static void shutdownSystemRuleFileScheduler() {
+        scheduledFuture.cancel(false);
+        schedulerIsRunning = false;
+        LOG.info("Shutdown scheduled task for system-rule.txt");
     }
 
     public static boolean needRelayToRemoteServer(String domainName) {
+        boolean enablePacMode = PAC_CONFIG_ATOMIC_REFERENCE.get().isEnablePacMode();
         if (!enablePacMode) {
             return true;
         }
