@@ -7,10 +7,10 @@ import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
-import com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant;
 import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +33,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 
+import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.DEFAULT_CIPHER_METHOD;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
@@ -113,15 +114,25 @@ public class ConfigUtil {
         // 检查 updatedCipherConfig（强制）
         CipherConfig newCipherConfig = Optional.ofNullable(updatedCipherConfig)
                 .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher config is null!"));
+
         // 检查 password（强制）
-        String password = Optional.ofNullable(newCipherConfig.getPassword())
-                .orElseThrow(() -> new Shadowsocks4jProxyException("Cipher password is null!"));
+        String password = newCipherConfig.getPassword();
+        if (StringUtils.isEmpty(password)) {
+            throw new Shadowsocks4jProxyException("Cipher password is null!");
+        }
+
         // 检查 salt（可选）
-        String salt = Optional.ofNullable(newCipherConfig.getSalt())
-                .orElseGet(() -> new StringBuilder(password).reverse().toString());
+        String salt = newCipherConfig.getSalt();
+        if (StringUtils.isEmpty(salt)) {
+            salt = new StringBuilder(password).reverse().toString();
+        }
+
         // 检查 method（可选）
-        String method = Optional.ofNullable(newCipherConfig.getMethod())
-                .orElse(AEADCipherAlgorithmConstant.DEFAULT_CIPHER_METHOD);
+        String method = newCipherConfig.getMethod();
+        if (StringUtils.isEmpty(method)) {
+            method = DEFAULT_CIPHER_METHOD;
+        }
+
         // 更新 CipherUtil
         update(password, salt, method);
     }
@@ -143,10 +154,24 @@ public class ConfigUtil {
                 shutdownSystemRuleFileScheduler();
             }
             PacConfig oldPacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
-            pacConfig.setUpdateUrl(Optional.ofNullable(newPacConfig.getUpdateUrl())
-                    .orElseGet(() -> oldPacConfig.getUpdateUrl() == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldPacConfig.getUpdateUrl()));
-            pacConfig.setUpdateInterval(Optional.ofNullable(newPacConfig.getUpdateInterval())
-                    .orElseGet(() -> oldPacConfig.getUpdateInterval() == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL : oldPacConfig.getUpdateInterval()));
+
+            // 检查 updateUrl
+            String updateUrl = newPacConfig.getUpdateUrl();
+            if (StringUtils.isEmpty(updateUrl)) {
+                String oldUpdateUrl = oldPacConfig.getUpdateUrl();
+                updateUrl = StringUtils.isEmpty(oldUpdateUrl) ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldUpdateUrl;
+            }
+            pacConfig.setUpdateUrl(updateUrl);
+
+            // 检查 updateInterval
+            Long updateInterval = Optional.ofNullable(newPacConfig.getUpdateInterval())
+                    .orElseGet(() -> {
+                        Long oldUpdateInterval = oldPacConfig.getUpdateInterval();
+                        return oldUpdateInterval == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL : oldUpdateInterval;
+                    });
+            pacConfig.setUpdateInterval(updateInterval);
+
+            // 启动定时器
             startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
             createRuleFile(USER_RULE_TXT_LOCATION);
         }
