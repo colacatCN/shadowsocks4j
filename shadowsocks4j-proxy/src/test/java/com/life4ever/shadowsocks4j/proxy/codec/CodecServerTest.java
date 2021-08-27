@@ -27,7 +27,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMo
 
 public class CodecServerTest {
 
-    private static final String SERVER_SLOGAN = "Hello Server ";
+    private static final String SERVER_SLOGAN = "Hello Client ";
 
     private static final Logger LOG = LoggerFactory.getLogger(CodecClientTest.class);
 
