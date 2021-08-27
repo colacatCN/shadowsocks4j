@@ -1,7 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-
-import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.encrypt;
 
 public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
 
@@ -35,7 +32,6 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf byteBuf = (ByteBuf) msg;
-
         if (!isInitOk) {
             ByteBuf byteBufWithTargetAddress = parseSocks5CommandRequest(socks5CommandRequest);
             byteBufWithTargetAddress.writeBytes(byteBuf);
@@ -43,10 +39,7 @@ public class LocalToRemoteHandler extends ChannelInboundHandlerAdapter {
             ReferenceCountUtil.release(msg);
             isInitOk = true;
         }
-
-        byte[] encryptedMsg = encrypt(ByteBufUtil.getBytes(byteBuf));
-        ReferenceCountUtil.release(byteBuf);
-        localServerChannelFuture.channel().writeAndFlush(Unpooled.copiedBuffer(encryptedMsg));
+        localServerChannelFuture.channel().writeAndFlush(byteBuf);
     }
 
     private ByteBuf parseSocks5CommandRequest(Socks5CommandRequest socks5CommandRequest) {

@@ -1,6 +1,8 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
+import com.life4ever.shadowsocks4j.proxy.handler.common.CipherDecryptHandler;
+import com.life4ever.shadowsocks4j.proxy.handler.common.CipherEncryptHandler;
 import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
@@ -65,6 +67,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     @Override
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
+                        pipeline.addFirst(CipherEncryptHandler.getInstance());
+                        pipeline.addLast(new CipherDecryptHandler());
                         pipeline.addLast(new RemoteToLocalHandler(ctx));
                         pipeline.addLast(ExceptionCaughtHandler.getInstance());
                     }
