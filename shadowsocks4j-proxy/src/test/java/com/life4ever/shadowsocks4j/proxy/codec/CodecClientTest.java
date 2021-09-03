@@ -16,6 +16,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,7 +46,8 @@ public class CodecClientTest extends Shadowsocks4jProxyApplicationTest {
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
                         pipeline.addFirst(CipherEncryptHandler.getInstance());
-                        pipeline.addLast(new CipherDecryptHandler());
+                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                        pipeline.addLast(CipherDecryptHandler.getInstance());
                         pipeline.addLast(new CodecClientDataHandler());
                     }
                 });

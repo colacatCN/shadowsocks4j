@@ -14,6 +14,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
@@ -68,7 +69,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
                         pipeline.addFirst(CipherEncryptHandler.getInstance());
-                        pipeline.addLast(new CipherDecryptHandler());
+                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                        pipeline.addLast(CipherDecryptHandler.getInstance());
                         pipeline.addLast(new RemoteToLocalHandler(ctx));
                         pipeline.addLast(ExceptionCaughtHandler.getInstance());
                     }

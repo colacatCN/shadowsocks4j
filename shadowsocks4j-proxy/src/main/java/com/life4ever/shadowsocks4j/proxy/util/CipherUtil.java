@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Base64;
 import java.util.regex.Matcher;
 
 import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.AES;
@@ -72,14 +73,15 @@ public class CipherUtil {
 
             // iv + 密文
             byte[] encryptedContent = cipher.doFinal(content);
-            return assemblyEncryptedContentWithIv(encryptedContent, iv);
+            return Base64.getMimeEncoder().encode(assembleParts(iv, encryptedContent));
         } catch (InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | InvalidKeySpecException | BadPaddingException | InvalidKeyException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
     }
 
-    public static byte[] decrypt(byte[] encryptedContent) throws Shadowsocks4jProxyException {
+    public static byte[] decrypt(byte[] base64Content) throws Shadowsocks4jProxyException {
         try {
+            byte[] encryptedContent = Base64.getMimeDecoder().decode(base64Content);
             Cipher cipher = Cipher.getInstance(algorithmMode);
             GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(DEFAULT_AES_GCM_TAG_BITS_LENGTH, encryptedContent, 0, DEFAULT_AES_GCM_IV_BYTES_LENGTH);
             cipher.init(Cipher.DECRYPT_MODE, getSecretKeyFromPassword(password, salt), gcmParameterSpec);
@@ -102,7 +104,7 @@ public class CipherUtil {
         return secretKey;
     }
 
-    private static byte[] assemblyEncryptedContentWithIv(byte[] encryptedContent, byte[] iv) {
+    private static byte[] assembleParts(byte[] iv, byte[] encryptedContent) {
         byte[] bytes = new byte[encryptedContent.length + DEFAULT_AES_GCM_IV_BYTES_LENGTH];
         System.arraycopy(iv, 0, bytes, 0, iv.length);
         System.arraycopy(encryptedContent, 0, bytes, iv.length, encryptedContent.length);

@@ -3,35 +3,36 @@ package com.life4ever.shadowsocks4j.proxy.handler.common;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-
-import java.util.List;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
 
 import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.decrypt;
 
-public class CipherDecryptHandler extends ByteToMessageDecoder {
+@ChannelHandler.Sharable
+public class CipherDecryptHandler extends ChannelInboundHandlerAdapter {
 
-    private static final int HEADER_LENGTH = 4;
+    private CipherDecryptHandler() {
+    }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        if (msg.readableBytes() < HEADER_LENGTH) {
-            return;
-        }
-
-        msg.resetReaderIndex();
-
-        int contentLength = msg.readInt();
-        if (msg.readableBytes() < contentLength) {
-            msg.resetReaderIndex();
-            return;
-        }
-
-        byte[] encryptedContent = ByteBufUtil.getBytes(msg, HEADER_LENGTH, contentLength);
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        ByteBuf byteBuf = (ByteBuf) msg;
+        byte[] encryptedContent = ByteBufUtil.getBytes(byteBuf);
         byte[] decryptedContent = decrypt(encryptedContent);
-        msg.skipBytes(msg.readableBytes());
-        out.add(Unpooled.copiedBuffer(decryptedContent));
+        ReferenceCountUtil.release(byteBuf);
+        ctx.fireChannelRead(Unpooled.copiedBuffer(decryptedContent));
+    }
+
+    public static CipherDecryptHandler getInstance() {
+        return CipherDecryptHandlerHolder.INSTANCE;
+    }
+
+    private static class CipherDecryptHandlerHolder {
+
+        private static final CipherDecryptHandler INSTANCE = new CipherDecryptHandler();
+
     }
 
 }
