@@ -18,6 +18,7 @@ public class CipherEncryptHandler extends MessageToByteEncoder<ByteBuf> {
     protected void encode(ChannelHandlerContext ctx, ByteBuf msg, ByteBuf out) throws Exception {
         byte[] plainContent = ByteBufUtil.getBytes(msg);
         byte[] encryptedContent = encrypt(plainContent);
+        out.writeInt(encryptedContent.length);
         out.writeBytes(encryptedContent);
     }
 

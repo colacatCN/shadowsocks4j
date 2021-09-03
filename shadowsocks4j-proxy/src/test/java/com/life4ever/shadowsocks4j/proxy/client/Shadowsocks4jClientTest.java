@@ -1,5 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.client;
 
+import com.life4ever.shadowsocks4j.proxy.Shadowsocks4jProxyApplicationTest;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -26,31 +27,24 @@ import io.netty.handler.codec.socksx.v5.Socks5InitialResponse;
 import io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 @Ignore
-public class Shadowsocks4jClientTest {
+public class Shadowsocks4jClientTest extends Shadowsocks4jProxyApplicationTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Shadowsocks4jClientTest.class);
-
-    private static final ThreadLocalRandom THREAD_LOCAL_RANDOM = ThreadLocalRandom.current();
-
-    private static final String TARGET_SERVER_IP = "10.80.12.82";
+    private static final String TARGET_SERVER_IP = "127.0.0.1";
 
     private static final int TARGET_SERVER_PORT = 10728;
 
-    private static final int numOfClient = 100;
+    private static final int numOfClient = 1;
 
     private final NioEventLoopGroup workerGroup = new NioEventLoopGroup(numOfClient);
 
-    private final SocketAddress localServerSocketAddress = new InetSocketAddress("10.80.12.6", 10418);
+    private final SocketAddress localServerSocketAddress = new InetSocketAddress("127.0.0.1", 10418);
 
     @Test
     public void test() throws InterruptedException {
@@ -84,11 +78,11 @@ public class Shadowsocks4jClientTest {
             bootstrap.connect(localServerSocketAddress)
                     .addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
-                            LOG.info("成功连接 local-server");
+                            log.info("成功连接 local-server");
                             Socks5InitialRequest socks5InitialRequest = new DefaultSocks5InitialRequest(Socks5AuthMethod.NO_AUTH);
                             future.channel().writeAndFlush(socks5InitialRequest);
                         } else {
-                            LOG.error("无法连接 local-server");
+                            log.error("无法连接 local-server");
                         }
                     });
         }
@@ -96,7 +90,7 @@ public class Shadowsocks4jClientTest {
         TimeUnit.HOURS.sleep(1);
     }
 
-    private static class Socks5InitialResponseHandler extends SimpleChannelInboundHandler<Socks5InitialResponse> {
+    private class Socks5InitialResponseHandler extends SimpleChannelInboundHandler<Socks5InitialResponse> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Socks5InitialResponse msg) throws Exception {
@@ -106,7 +100,7 @@ public class Shadowsocks4jClientTest {
 
     }
 
-    private static class Socks5CommandResponseHandler extends SimpleChannelInboundHandler<Socks5CommandResponse> {
+    private class Socks5CommandResponseHandler extends SimpleChannelInboundHandler<Socks5CommandResponse> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Socks5CommandResponse msg) throws Exception {
@@ -116,21 +110,15 @@ public class Shadowsocks4jClientTest {
 
     }
 
-    private static class ClientDataHandler extends SimpleChannelInboundHandler<ByteBuf> {
+    private class ClientDataHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
             byte[] bytes = ByteBufUtil.getBytes(msg);
-            LOG.info(new String(bytes));
+            log.info(new String(bytes));
             ctx.writeAndFlush(Unpooled.copiedBuffer(getRandomBytes()));
         }
 
-    }
-
-    private static byte[] getRandomBytes() {
-        byte[] bytes = new byte[1024];
-        THREAD_LOCAL_RANDOM.nextBytes(bytes);
-        return bytes;
     }
 
 }

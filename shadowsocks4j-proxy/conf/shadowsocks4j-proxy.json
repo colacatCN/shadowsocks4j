@@ -13,7 +13,7 @@
         "method": "aes-128-gcm"
     },
     "pac": {
-        "enable-pac-mode": true,
+        "enable-pac-mode": false,
         "update-url": "https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt",
         "update-interval": 3600000
     }

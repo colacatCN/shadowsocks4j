@@ -12,9 +12,23 @@ import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.decrypt;
 
 public class CipherDecryptHandler extends ByteToMessageDecoder {
 
+    private static final int HEADER_LENGTH = 4;
+
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) throws Exception {
-        byte[] encryptedContent = ByteBufUtil.getBytes(msg);
+        if (msg.readableBytes() < HEADER_LENGTH) {
+            return;
+        }
+
+        msg.resetReaderIndex();
+
+        int contentLength = msg.readInt();
+        if (msg.readableBytes() < contentLength) {
+            msg.resetReaderIndex();
+            return;
+        }
+
+        byte[] encryptedContent = ByteBufUtil.getBytes(msg, HEADER_LENGTH, contentLength);
         byte[] decryptedContent = decrypt(encryptedContent);
         msg.skipBytes(msg.readableBytes());
         out.add(Unpooled.copiedBuffer(decryptedContent));
