@@ -17,6 +17,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
 
+@Ignore
 public class CodecServerTest {
 
     private static final String SERVER_SLOGAN = "Hello Client ";

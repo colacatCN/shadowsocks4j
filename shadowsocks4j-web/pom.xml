@@ -9,6 +9,7 @@
         <groupId>com.life4ever</groupId>
         <artifactId>shadowsocks4j</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>shadowsocks4j-web</artifactId>
@@ -45,7 +46,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.life4ever.App</mainClass>
+                    <mainClass>com.life4ever.shadowsocks4j.web.Shadowsocks4jWebApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

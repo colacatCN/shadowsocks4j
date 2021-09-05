@@ -18,6 +18,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
 
+@Ignore
 public class CodecClientTest extends Shadowsocks4jProxyApplicationTest {
 
     private static final String CLIENT_SLOGAN = "Hello Server";
