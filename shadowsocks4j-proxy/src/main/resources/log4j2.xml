@@ -8,18 +8,12 @@
         <File name="testLogFile" fileName="log/test.log" append="false">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t] %class{36} %M %L - %msg%xEx%n"/>
         </File>
-        <RollingFile name="rollingLogFile" fileName="log/shadowsocks4j.log" filePattern="log/$${date:yyyy-MM}/shadowsocks4j-%d{yyyy-MM-dd}-%i.log.gz">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %class{36} %M %L - %msg%xEx%n"/>
-            <SizeBasedTriggeringPolicy size="100MB"/>
-            <DefaultRolloverStrategy max="10"/>
-        </RollingFile>
     </Appenders>
 
     <Loggers>
         <Root level="INFO">
             <AppenderRef ref="console"/>
             <AppenderRef ref="testLogFile"/>
-            <AppenderRef ref="rollingLogFile"/>
         </Root>
     </Loggers>
 

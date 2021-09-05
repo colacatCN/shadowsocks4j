@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t] %class{36} %M %L - %msg%xEx%n"/>
+        </Console>
+        <RollingFile name="proxyAppender" fileName="log/shadowsocks4j-proxy.log"
+                     filePattern="log/$${date:yyyy-MM}/shadowsocks4j-proxy-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %class{36} %M %L - %msg%xEx%n"/>
+            <SizeBasedTriggeringPolicy size="100MB"/>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingFile>
+        <RollingFile name="webAppender" fileName="log/shadowsocks4j-web.log"
+                     filePattern="log/$${date:yyyy-MM}/shadowsocks4j-web-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %class{36} %M %L - %msg%xEx%n"/>
+            <SizeBasedTriggeringPolicy size="100MB"/>
+            <DefaultRolloverStrategy max="14"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.life4ever.shadowsocks4j.proxy" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="proxyAppender"/>
+        </Logger>
+        <Logger name="com.life4ever.shadowsocks4j.web" level="INFO" additivity="false">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="webAppender"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
