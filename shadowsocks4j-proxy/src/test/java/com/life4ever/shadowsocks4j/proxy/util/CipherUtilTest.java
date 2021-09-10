@@ -3,6 +3,7 @@ package com.life4ever.shadowsocks4j.proxy.util;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -12,6 +13,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.decrypt;
 import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.encrypt;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
 
+@Ignore
 public class CipherUtilTest {
 
     @Before

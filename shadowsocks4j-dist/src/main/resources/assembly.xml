@@ -1,0 +1,73 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+
+    <id>bin</id>
+
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>shadowsocks4j-${project.version}</baseDirectory>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <directoryMode>0755</directoryMode>
+            <unpack>false</unpack>
+            <useProjectArtifact>false</useProjectArtifact>
+            <useProjectAttachments>false</useProjectAttachments>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>org.apache.logging.log4j:log4j-api</include>
+                <include>org.apache.logging.log4j:log4j-core</include>
+                <include>org.apache.logging.log4j:log4j-slf4j-impl</include>
+            </includes>
+        </dependencySet>
+    </dependencySets>
+
+    <files>
+        <file>
+            <source>../shadowsocks4j-proxy/target/shadowsocks4j-proxy-${project.version}.jar</source>
+            <outputDirectory>lib</outputDirectory>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
+            <source>../shadowsocks4j-web/target/shadowsocks4j-web-${project.version}.jar</source>
+            <outputDirectory>lib</outputDirectory>
+            <fileMode>0755</fileMode>
+        </file>
+        <file>
+            <source>target/shadowsocks4j-dist-${project.version}.jar</source>
+            <outputDirectory>lib</outputDirectory>
+            <fileMode>0755</fileMode>
+        </file>
+    </files>
+
+    <fileSets>
+        <fileSet>
+            <directory>src/main/java/com/life4ever/shadowsocks4j/dist/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <directoryMode>0755</directoryMode>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/java/com/life4ever/shadowsocks4j/dist/conf</directory>
+            <outputDirectory>conf</outputDirectory>
+            <directoryMode>0644</directoryMode>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/java/com/life4ever/shadowsocks4j/dist</directory>
+            <outputDirectory>log</outputDirectory>
+            <directoryMode>0644</directoryMode>
+            <fileMode>0644</fileMode>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+
+</assembly>
