@@ -3,6 +3,9 @@ package com.life4ever.shadowsocks4j.proxy.util;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.Shadowsocks4jProxyFileCallbackImpl;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.SystemRuleFileEventCallbackImpl;
 import com.life4ever.shadowsocks4j.proxy.callback.impl.UserRuleFileEventCallbackImpl;
+import com.life4ever.shadowsocks4j.proxy.cipher.ICipherFunction;
+import com.life4ever.shadowsocks4j.proxy.cipher.impl.AesCipherFunctionImpl;
+import com.life4ever.shadowsocks4j.proxy.cipher.impl.Chacha20CipherFunctionImpl;
 import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
@@ -33,20 +36,22 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 
-import static com.life4ever.shadowsocks4j.proxy.constant.AEADCipherAlgorithmConstant.DEFAULT_CIPHER_METHOD;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_AES_METHOD;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_SECRET_KEY_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_LENGTH_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SYSTEM_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_STRING;
 import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.LINE_FEED;
+import static com.life4ever.shadowsocks4j.proxy.enums.CipherAlgorithmEnum.AES;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
 import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
-import static com.life4ever.shadowsocks4j.proxy.util.CipherUtil.update;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -58,6 +63,8 @@ public class ConfigUtil {
     private static final AtomicReference<ServerConfig> LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
     private static final AtomicReference<ServerConfig> REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
+
+    private static final AtomicReference<ICipherFunction> CIPHER_FUNCTION_ATOMIC_REFERENCE = new AtomicReference<>();
 
     private static final AtomicReference<PacConfig> PAC_CONFIG_ATOMIC_REFERENCE = new AtomicReference<>();
 
@@ -130,11 +137,22 @@ public class ConfigUtil {
         // 检查 method（可选）
         String method = newCipherConfig.getMethod();
         if (StringUtils.isEmpty(method)) {
-            method = DEFAULT_CIPHER_METHOD;
+            method = DEFAULT_AES_METHOD;
         }
 
-        // 更新 CipherUtil
-        update(password, salt, method);
+        // 实例化 ICipherFunction 接口
+        ICipherFunction cipherFunction = initializeCipherFunction(password, salt, method);
+        CIPHER_FUNCTION_ATOMIC_REFERENCE.set(cipherFunction);
+    }
+
+    private static ICipherFunction initializeCipherFunction(String password, String salt, String method) throws Shadowsocks4jProxyException {
+        Matcher matcher = SECRET_KEY_LENGTH_PATTERN.matcher(method);
+        int secretKeyLength = DEFAULT_SECRET_KEY_LENGTH;
+        if (matcher.find()) {
+            secretKeyLength = Integer.parseInt(matcher.group());
+        }
+        return method.toLowerCase().startsWith(AES.getName()) ?
+                new AesCipherFunctionImpl(password, salt, secretKeyLength) : new Chacha20CipherFunctionImpl(password, salt, secretKeyLength);
     }
 
     private static void updatePacConfig(PacConfig updatedPacConfig) throws Shadowsocks4jProxyException {
@@ -297,6 +315,10 @@ public class ConfigUtil {
 
     public static void unlockWhiteList() {
         LOCK.unlock();
+    }
+
+    public static ICipherFunction getCipherFunction() {
+        return CIPHER_FUNCTION_ATOMIC_REFERENCE.get();
     }
 
 }
