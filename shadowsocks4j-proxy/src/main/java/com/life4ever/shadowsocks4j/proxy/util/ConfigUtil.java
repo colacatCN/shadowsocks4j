@@ -13,7 +13,6 @@ import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
 import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,19 +124,19 @@ public class ConfigUtil {
 
         // 检查 password（强制）
         String password = newCipherConfig.getPassword();
-        if (StringUtils.isEmpty(password)) {
+        if (StringUtil.isEmpty(password)) {
             throw new Shadowsocks4jProxyException("Cipher password is null!");
         }
 
         // 检查 salt（可选）
         String salt = newCipherConfig.getSalt();
-        if (StringUtils.isEmpty(salt)) {
+        if (StringUtil.isEmpty(salt)) {
             salt = new StringBuilder(password).reverse().toString();
         }
 
         // 检查 method（可选）
         String method = newCipherConfig.getMethod();
-        if (StringUtils.isEmpty(method)) {
+        if (StringUtil.isEmpty(method)) {
             method = DEFAULT_CIPHER_METHOD;
         }
 
@@ -184,9 +183,9 @@ public class ConfigUtil {
 
             // 检查 updateUrl
             String updateUrl = newPacConfig.getUpdateUrl();
-            if (StringUtils.isEmpty(updateUrl)) {
+            if (StringUtil.isEmpty(updateUrl)) {
                 String oldUpdateUrl = oldPacConfig.getUpdateUrl();
-                updateUrl = StringUtils.isEmpty(oldUpdateUrl) ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldUpdateUrl;
+                updateUrl = StringUtil.isEmpty(oldUpdateUrl) ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldUpdateUrl;
             }
             pacConfig.setUpdateUrl(updateUrl);
 
