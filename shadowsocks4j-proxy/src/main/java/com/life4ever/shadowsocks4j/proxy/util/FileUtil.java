@@ -30,7 +30,7 @@ import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_ST
 
 public class FileUtil {
 
-    private static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j FileMonitor";
+    private static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j-FileMonitor";
 
     private static final long FILE_MODIFY_EVENT_DELAY_TIME = 1000L;
 

@@ -17,12 +17,12 @@ public class Shadowsocks4jProxyApplication {
             throw new Shadowsocks4jProxyException("请配置启动参数");
         }
 
-        String proxyMode = args[0];
+        String proxyMode = args[0].toLowerCase();
         IShadowsocks4jService shadowsocks4jService;
-        if (LOCAL.getKey().equals(proxyMode)) {
+        if (LOCAL.getKey().contains(proxyMode)) {
             activateLocalMode();
             shadowsocks4jService = new Shadowsocks4jLocalServiceImpl();
-        } else if (REMOTE.getKey().equals(proxyMode)) {
+        } else if (REMOTE.getKey().contains(proxyMode)) {
             activateRemoteMode();
             shadowsocks4jService = new Shadowsocks4jRemoteServiceImpl();
         } else {

@@ -19,13 +19,16 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_ALGORITHM;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_ITERATION_COUNT;
+
 public abstract class AbstractCipherFunction implements ICipherFunction {
 
     protected static final int NONCE_LENGTH = 12;
 
-    private static final int MAX_SECRET_KEY_LENGTH = 256;
+    protected static final int EXTRA_LENGTH = 4;
 
-    private static final String SECRET_KEY_ALGORITHM = "PBKDF2WithHmacSHA256";
+    protected static final int HEADER_LENGTH = NONCE_LENGTH + EXTRA_LENGTH;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -39,7 +42,7 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
                                      CipherAlgorithmEnum cipherAlgorithm)
             throws Shadowsocks4jProxyException {
         this.cipherAlgorithm = cipherAlgorithm;
-        this.secretKeySpec = createSecretKeySpec(password, salt, findSuitableLength(secretKeyLength));
+        this.secretKeySpec = createSecretKeySpec(password, salt, secretKeyLength);
     }
 
     @Override
@@ -51,13 +54,16 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
             byte[] nonce = new byte[NONCE_LENGTH];
             SECURE_RANDOM.nextBytes(nonce);
 
+            // 生成 extra
+            byte[] extra = createExtra();
+
             // 生成加密的 parameterSpec
             AlgorithmParameterSpec parameterSpec = createParameterSpecForEncryption(nonce);
 
             // 执行加密
             cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, parameterSpec);
             byte[] encryptedContent = cipher.doFinal(content);
-            return Base64.getMimeEncoder().encode(mergeAllBytes(nonce, encryptedContent));
+            return Base64.getMimeEncoder().encode(mergeAllBytes(nonce, extra, encryptedContent));
         } catch (InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
@@ -74,7 +80,7 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
 
             // 执行解密
             cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, parameterSpec);
-            return cipher.doFinal(encryptedContent, NONCE_LENGTH, encryptedContent.length - NONCE_LENGTH);
+            return cipher.doFinal(encryptedContent, HEADER_LENGTH, encryptedContent.length - HEADER_LENGTH);
         } catch (InvalidAlgorithmParameterException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException | BadPaddingException | InvalidKeyException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
@@ -84,25 +90,21 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
 
     protected abstract AlgorithmParameterSpec createParameterSpecForDecryption(byte[] encryptedContent);
 
-    private int findSuitableLength(int length) {
-        int n = -1 >>> Integer.numberOfLeadingZeros(length - 1);
-        if (n < 0) {
-            return 1;
-        }
-        return n >= MAX_SECRET_KEY_LENGTH ? MAX_SECRET_KEY_LENGTH : n + 1;
+    protected byte[] createExtra() {
+        return new byte[EXTRA_LENGTH];
     }
 
-    protected SecretKeySpec createSecretKeySpec(String password, String salt, int keyLength) throws Shadowsocks4jProxyException {
+    private SecretKeySpec createSecretKeySpec(String password, String salt, int length) throws Shadowsocks4jProxyException {
         try {
             SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(SECRET_KEY_ALGORITHM);
-            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), 65536, keyLength);
+            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), SECRET_KEY_ITERATION_COUNT, length);
             return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), cipherAlgorithm.getName());
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
     }
 
-    public static byte[] mergeAllBytes(byte[]... bytesArray) {
+    private byte[] mergeAllBytes(byte[]... bytesArray) {
         if (bytesArray == null) {
             return new byte[]{};
         }

@@ -38,8 +38,9 @@ import java.util.regex.Matcher;
 
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_AES_METHOD;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_CIPHER_METHOD;
 import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_SECRET_KEY_LENGTH;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.MAXIMUM_SECRET_KEY_LENGTH;
 import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_LENGTH_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
@@ -137,7 +138,7 @@ public class ConfigUtil {
         // 检查 method（可选）
         String method = newCipherConfig.getMethod();
         if (StringUtils.isEmpty(method)) {
-            method = DEFAULT_AES_METHOD;
+            method = DEFAULT_CIPHER_METHOD;
         }
 
         // 实例化 ICipherFunction 接口
@@ -149,10 +150,18 @@ public class ConfigUtil {
         Matcher matcher = SECRET_KEY_LENGTH_PATTERN.matcher(method);
         int secretKeyLength = DEFAULT_SECRET_KEY_LENGTH;
         if (matcher.find()) {
-            secretKeyLength = Integer.parseInt(matcher.group());
+            secretKeyLength = findSuitableLength(Integer.parseInt(matcher.group()));
         }
         return method.toLowerCase().startsWith(AES.getName()) ?
-                new AesCipherFunctionImpl(password, salt, secretKeyLength) : new Chacha20CipherFunctionImpl(password, salt, secretKeyLength);
+                new AesCipherFunctionImpl(password, salt, secretKeyLength) : new Chacha20CipherFunctionImpl(password, salt, MAXIMUM_SECRET_KEY_LENGTH);
+    }
+
+    private static int findSuitableLength(int length) {
+        int n = -1 >>> Integer.numberOfLeadingZeros(length - 1);
+        if (n < 0) {
+            return 1;
+        }
+        return n >= MAXIMUM_SECRET_KEY_LENGTH ? MAXIMUM_SECRET_KEY_LENGTH : n + 1;
     }
 
     private static void updatePacConfig(PacConfig updatedPacConfig) throws Shadowsocks4jProxyException {
