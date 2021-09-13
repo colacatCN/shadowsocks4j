@@ -1,50 +1,55 @@
 package com.life4ever.shadowsocks4j.proxy.util;
 
-import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 public class HttpClientUtil {
 
-    private static final long CONNECT_TIMEOUT = 60 * 1000L;
+    private static final int CONNECTION_REQUEST_TIMEOUT = 10 * 1000;
 
-    private static final long READ_TIMEOUT = 60 * 1000L;
+    private static final int CONNECT_TIMEOUT = 60 * 1000;
 
-    private static final long WRITE_TIMEOUT = 60 * 1000L;
+    private static final int SOCKET_TIMEOUT = 60 * 1000;
 
-    private static OkHttpClient okHttpClient;
+    private static final RequestConfig REQUEST_CONFIG;
+
+    private static CloseableHttpClient httpClient;
+
+    static {
+        REQUEST_CONFIG = RequestConfig.custom()
+                .setConnectionRequestTimeout(CONNECTION_REQUEST_TIMEOUT)
+                .setConnectTimeout(CONNECT_TIMEOUT)
+                .setSocketTimeout(SOCKET_TIMEOUT)
+                .build();
+    }
 
     private HttpClientUtil() {
     }
 
-    public static String execute(String url) throws Shadowsocks4jProxyException {
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        String result;
-        try (Response response = getOkHttpClient().newCall(request).execute()) {
-            result = Objects.requireNonNull(response.body()).string();
-        } catch (IOException e) {
-            throw new Shadowsocks4jProxyException(e.getMessage(), e);
+    public static String execute(String url) throws IOException {
+        HttpGet httpGet = new HttpGet(url);
+        httpGet.setConfig(REQUEST_CONFIG);
+        try (CloseableHttpResponse response = getHttpClient().execute(httpGet)) {
+            return EntityUtils.toString(response.getEntity());
         }
-        return result;
     }
 
-    private static OkHttpClient getOkHttpClient() {
-        if (okHttpClient == null) {
-            okHttpClient = new OkHttpClient.Builder()
-                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)
-                    .readTimeout(READ_TIMEOUT, TimeUnit.MILLISECONDS)
-                    .writeTimeout(WRITE_TIMEOUT, TimeUnit.MILLISECONDS)
-                    .build();
+    public static void close() throws IOException {
+        httpClient.close();
+        httpClient = null;
+    }
+
+    private static CloseableHttpClient getHttpClient() {
+        if (httpClient == null) {
+            httpClient = HttpClients.createDefault();
         }
-        return okHttpClient;
+        return httpClient;
     }
 
 }

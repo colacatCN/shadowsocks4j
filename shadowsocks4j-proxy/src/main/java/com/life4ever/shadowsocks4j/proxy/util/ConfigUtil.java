@@ -16,6 +16,7 @@ import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +57,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.updateFile;
+import static com.life4ever.shadowsocks4j.proxy.util.HttpClientUtil.close;
 import static com.life4ever.shadowsocks4j.proxy.util.HttpClientUtil.execute;
 
 public class ConfigUtil {
@@ -96,24 +98,28 @@ public class ConfigUtil {
     }
 
     public static void updateShadowsocks4jProxyConfig() throws Shadowsocks4jProxyException {
-        // 加载配置文件
-        Shadowsocks4jProxyConfig shadowsocks4jProxyConfig = loadConfigurationFile();
-        LOG.info("Shadowsocks4j proxy configuration is {}.", shadowsocks4jProxyConfig);
+        try {
+            // 加载配置文件
+            Shadowsocks4jProxyConfig shadowsocks4jProxyConfig = loadConfigurationFile();
+            LOG.info("Shadowsocks4j proxy configuration is {}.", shadowsocks4jProxyConfig);
 
-        // 更新 local-server（强制）
-        LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getLocalServerConfig())
-                .orElseThrow(() -> new Shadowsocks4jProxyException("Local server configuration is null.")));
+            // 更新 local-server（强制）
+            LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getLocalServerConfig())
+                    .orElseThrow(() -> new Shadowsocks4jProxyException("Local server configuration is null.")));
 
-        // 更新 remote-server（强制）
-        REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getRemoteServerConfig())
-                .orElseThrow(() -> new Shadowsocks4jProxyException("Remote server configuration is null.")));
+            // 更新 remote-server（强制）
+            REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getRemoteServerConfig())
+                    .orElseThrow(() -> new Shadowsocks4jProxyException("Remote server configuration is null.")));
 
-        // 更新 cipher
-        updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
+            // 更新 cipher
+            updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
 
-        // 更新 pac
-        if (LOCAL.equals(proxyMode)) {
-            updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
+            // 更新 pac
+            if (LOCAL.equals(proxyMode)) {
+                updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
+            }
+        } catch (IOException e) {
+            throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
     }
 
@@ -170,49 +176,53 @@ public class ConfigUtil {
         boolean enablePacMode = Optional.ofNullable(newPacConfig.isEnablePacMode())
                 .orElse(Boolean.FALSE);
 
-        if (!enablePacMode && schedulerIsRunning) {
-            shutdownSystemRuleFileScheduler();
-        }
-
-        PacConfig pacConfig = new PacConfig(enablePacMode);
-        if (enablePacMode) {
-            if (schedulerIsRunning) {
+        try {
+            if (!enablePacMode && schedulerIsRunning) {
                 shutdownSystemRuleFileScheduler();
             }
-            PacConfig oldPacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
 
-            // 检查 updateUrl
-            String updateUrl = newPacConfig.getUpdateUrl();
-            if (StringUtil.isEmpty(updateUrl)) {
-                String oldUpdateUrl = oldPacConfig.getUpdateUrl();
-                updateUrl = StringUtil.isEmpty(oldUpdateUrl) ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldUpdateUrl;
+            PacConfig pacConfig = new PacConfig(enablePacMode);
+            if (enablePacMode) {
+                if (schedulerIsRunning) {
+                    shutdownSystemRuleFileScheduler();
+                }
+                PacConfig oldPacConfig = PAC_CONFIG_ATOMIC_REFERENCE.get();
+
+                // 检查 updateUrl
+                String updateUrl = newPacConfig.getUpdateUrl();
+                if (StringUtil.isEmpty(updateUrl)) {
+                    String oldUpdateUrl = oldPacConfig.getUpdateUrl();
+                    updateUrl = StringUtil.isEmpty(oldUpdateUrl) ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL : oldUpdateUrl;
+                }
+                pacConfig.setUpdateUrl(updateUrl);
+
+                // 检查 updateInterval
+                Long updateInterval = Optional.ofNullable(newPacConfig.getUpdateInterval())
+                        .orElseGet(() -> {
+                            Long oldUpdateInterval = oldPacConfig.getUpdateInterval();
+                            return oldUpdateInterval == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL : oldUpdateInterval;
+                        });
+                pacConfig.setUpdateInterval(updateInterval);
+
+                // 启动定时器
+                startSystemRuleFileScheduler(pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
+                createRuleFile(SYSTEM_RULE_TXT_LOCATION);
+                createRuleFile(USER_RULE_TXT_LOCATION);
             }
-            pacConfig.setUpdateUrl(updateUrl);
-
-            // 检查 updateInterval
-            Long updateInterval = Optional.ofNullable(newPacConfig.getUpdateInterval())
-                    .orElseGet(() -> {
-                        Long oldUpdateInterval = oldPacConfig.getUpdateInterval();
-                        return oldUpdateInterval == null ? DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL : oldUpdateInterval;
-                    });
-            pacConfig.setUpdateInterval(updateInterval);
-
-            // 启动定时器
-            startSystemRuleFileScheduler(SYSTEM_RULE_TXT_LOCATION, pacConfig.getUpdateUrl(), pacConfig.getUpdateInterval());
-            createRuleFile(USER_RULE_TXT_LOCATION);
+            PAC_CONFIG_ATOMIC_REFERENCE.set(pacConfig);
+        } catch (IOException e) {
+            throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
-        PAC_CONFIG_ATOMIC_REFERENCE.set(pacConfig);
     }
 
-    private static void startSystemRuleFileScheduler(String fileLocation, String updateUrl, long updateInterval) throws Shadowsocks4jProxyException {
-        createRuleFile(fileLocation);
+    private static void startSystemRuleFileScheduler(String updateUrl, long updateInterval) {
         scheduledFuture = SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
                         String base64EncodedString = execute(updateUrl);
                         String base64DecodedString = new String(Base64.getDecoder().decode(base64EncodedString.replaceAll(LINE_FEED, BLANK_STRING)), StandardCharsets.UTF_8);
-                        updateFile(fileLocation, base64DecodedString);
-                    } catch (Shadowsocks4jProxyException e) {
+                        updateFile(SYSTEM_RULE_TXT_LOCATION, base64DecodedString);
+                    } catch (IOException e) {
                         LOG.error(e.getMessage(), e);
                     }
                 }
@@ -221,9 +231,10 @@ public class ConfigUtil {
         LOG.info("Start scheduled task for system-rule.txt");
     }
 
-    private static void shutdownSystemRuleFileScheduler() {
+    private static void shutdownSystemRuleFileScheduler() throws IOException {
         scheduledFuture.cancel(false);
         schedulerIsRunning = false;
+        close();
         LOG.info("Shutdown scheduled task for system-rule.txt");
     }
 

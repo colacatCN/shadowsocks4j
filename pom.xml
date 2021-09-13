@@ -22,7 +22,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <spring.boot.version>2.5.3</spring.boot.version>
         <netty.version>4.1.48.Final</netty.version>
-        <okhttp3.version>4.9.0</okhttp3.version>
+        <httpcomponents.version>4.5.13</httpcomponents.version>
         <jackson.version>2.12.3</jackson.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j.version>2.12.1</log4j.version>
@@ -86,9 +86,9 @@
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp3.version}</version>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpcomponents.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

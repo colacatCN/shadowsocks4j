@@ -45,29 +45,23 @@ public class FileUtil {
     private FileUtil() {
     }
 
-    public static Shadowsocks4jProxyConfig loadConfigurationFile() throws Shadowsocks4jProxyException {
+    public static Shadowsocks4jProxyConfig loadConfigurationFile() throws IOException {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(SHADOWSOCKS4J_PROXY_JSON_LOCATION))) {
             return OBJECT_MAPPER.readValue(bufferedReader, Shadowsocks4jProxyConfig.class);
-        } catch (IOException e) {
-            throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
     }
 
-    public static void createRuleFile(String ruleFileLocation) throws Shadowsocks4jProxyException {
+    public static void createRuleFile(String ruleFileLocation) throws IOException {
         File ruleFile = new File(ruleFileLocation);
-        try {
-            if (!ruleFile.exists()) {
-                Files.createFile(ruleFile.toPath());
-                LOG.info("Succeed to create file {}.", ruleFile.getName());
-            } else {
-                LOG.warn("Failed to create file {}, because it already exists.", ruleFile.getName());
-            }
-        } catch (IOException e) {
-            throw new Shadowsocks4jProxyException(e.getMessage(), e);
+        if (ruleFile.exists()) {
+            LOG.warn("Failed to create file {}, because it already exists.", ruleFile.getName());
+            return;
         }
+        Files.createFile(ruleFile.toPath());
+        LOG.info("Succeed to create file {}.", ruleFile.getName());
     }
 
-    public static void updateFile(String filePath, String content) throws Shadowsocks4jProxyException {
+    public static void updateFile(String filePath, String content) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath))) {
             // 清空文件
             writer.write(BLANK_STRING);
@@ -75,8 +69,6 @@ public class FileUtil {
             // 写入数据
             writer.write(content);
             writer.flush();
-        } catch (IOException e) {
-            throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
     }
 
