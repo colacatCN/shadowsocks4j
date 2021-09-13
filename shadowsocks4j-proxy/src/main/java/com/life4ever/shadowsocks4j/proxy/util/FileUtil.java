@@ -26,11 +26,12 @@ import java.util.stream.Collectors;
 
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SHADOWSOCKS4J_CONF_DIR;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SHADOWSOCKS4J_PROXY_JSON_LOCATION;
-import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_STRING;
 
 public class FileUtil {
 
     private static final String FILE_MONITOR_THREAD_NAME = "Shadowsocks4j-FileMonitor";
+
+    private static final String BLANK_STRING = "";
 
     private static final long FILE_MODIFY_EVENT_DELAY_TIME = 1000L;
 

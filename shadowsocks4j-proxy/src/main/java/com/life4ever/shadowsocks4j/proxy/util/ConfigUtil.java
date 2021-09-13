@@ -46,8 +46,6 @@ import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEF
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SYSTEM_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT_LOCATION;
-import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.BLANK_STRING;
-import static com.life4ever.shadowsocks4j.proxy.constant.StringConstant.LINE_FEED;
 import static com.life4ever.shadowsocks4j.proxy.enums.CipherAlgorithmEnum.AES;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
@@ -219,9 +217,9 @@ public class ConfigUtil {
         scheduledFuture = SYSTEM_RULE_FILE_SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(
                 () -> {
                     try {
-                        String base64EncodedString = execute(updateUrl);
-                        String base64DecodedString = new String(Base64.getDecoder().decode(base64EncodedString.replaceAll(LINE_FEED, BLANK_STRING)), StandardCharsets.UTF_8);
-                        updateFile(SYSTEM_RULE_TXT_LOCATION, base64DecodedString);
+                        String base64Content = execute(updateUrl);
+                        String content = new String(Base64.getMimeDecoder().decode(base64Content), StandardCharsets.UTF_8);
+                        updateFile(SYSTEM_RULE_TXT_LOCATION, content);
                     } catch (IOException e) {
                         LOG.error(e.getMessage(), e);
                     }
