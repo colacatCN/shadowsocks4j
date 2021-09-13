@@ -13,9 +13,15 @@ import java.util.concurrent.ThreadFactory;
 
 public abstract class AbstractShadowsocks4jService implements IShadowsocks4jService {
 
-    private static final int RUNTIME_AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    protected final Logger LOG = LoggerFactory.getLogger(getClass());
+    private static final String BOSS_GROUP_THREAD_POOL_NAME = "netty-boss";
+
+    private static final String SERVER_WORKER_GROUP_THREAD_POOL_NAME = "netty-server-worker";
+
+    private static final String CLIENT_WORKER_GROUP_THREAD_POOL_NAME = "netty-client-worker";
+
+    private static final int RUNTIME_AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final String serviceName;
 
@@ -52,14 +58,14 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
     public void start() throws Shadowsocks4jProxyException {
         try {
             ChannelFuture channelFuture = bind(publishSocketAddress).sync();
-            LOG.info("Start {} @ {}.", serviceName, publishSocketAddress);
+            log.info("Start {} @ {}.", serviceName, publishSocketAddress);
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         } finally {
             shutdownGracefully();
-            LOG.info("Shutdown {} @ {}.", serviceName, publishSocketAddress);
+            log.info("Shutdown {} @ {}.", serviceName, publishSocketAddress);
         }
     }
 
@@ -70,9 +76,9 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
     }
 
     protected void initialize() {
-        ThreadFactory bossGroupThreadFactory = new DefaultThreadFactory("netty-boss");
-        ThreadFactory serverWorkerGroupThreadFactory = new DefaultThreadFactory("netty-server-worker");
-        ThreadFactory clientWorkerGroupThreadFactory = new DefaultThreadFactory("netty-client-worker");
+        ThreadFactory bossGroupThreadFactory = new DefaultThreadFactory(BOSS_GROUP_THREAD_POOL_NAME);
+        ThreadFactory serverWorkerGroupThreadFactory = new DefaultThreadFactory(SERVER_WORKER_GROUP_THREAD_POOL_NAME);
+        ThreadFactory clientWorkerGroupThreadFactory = new DefaultThreadFactory(CLIENT_WORKER_GROUP_THREAD_POOL_NAME);
 
         bossGroup = initializeEventLoopGroup(1, bossGroupThreadFactory);
         serverWorkerGroup = initializeEventLoopGroup(numOfServerWorkers, serverWorkerGroupThreadFactory);
