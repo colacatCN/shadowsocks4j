@@ -11,13 +11,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSocketAddress;
 
 public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jRemoteServiceImpl() {
-        super(REMOTE.name(), getRemoteServerSocketAddress());
+        super(REMOTE.name(), remoteServerSocketAddress());
         this.initialize();
     }
 

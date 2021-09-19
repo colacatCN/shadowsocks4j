@@ -11,13 +11,13 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.net.SocketAddress;
 import java.util.concurrent.ThreadFactory;
 
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getLocalServerSocketAddress;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.LOCAL;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.localServerSocketAddress;
 
 public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jLocalServiceImpl() {
-        super(LOCAL.name(), getLocalServerSocketAddress());
+        super(LOCAL.name(), localServerSocketAddress());
         this.initialize();
     }
 

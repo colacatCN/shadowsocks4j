@@ -55,11 +55,11 @@ public class FileUtil {
     public static void createRuleFile(String ruleFileLocation) throws IOException {
         File ruleFile = new File(ruleFileLocation);
         if (ruleFile.exists()) {
-            LOG.warn("Failed to create file {}, because it already exists.", ruleFile.getName());
+            LOG.warn("Failed to create {}, because it already exists.", ruleFile.getName());
             return;
         }
         Files.createFile(ruleFile.toPath());
-        LOG.info("Succeed to create file {}.", ruleFile.getName());
+        LOG.info("Succeed to create {}.", ruleFile.getName());
     }
 
     public static void updateFile(String filePath, String content) throws IOException {
@@ -112,14 +112,14 @@ public class FileUtil {
                 }
 
                 if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
-                    LOG.info("Trigger file {} create event.", fileName);
+                    LOG.info("Trigger create event of {}.", fileName);
                     fileEventCallback.onCreate();
                 } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
-                    LOG.info("Trigger file {} delete event.", fileName);
+                    LOG.info("Trigger delete event of {}.", fileName);
                     fileEventCallback.onDelete();
                 } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)
                         && ((getCurrentTime() - lastModifyTime >= FILE_MODIFY_EVENT_DELAY_TIME) || lastModifyTime == 0L)) {
-                    LOG.info("Trigger file {} modify event.", fileName);
+                    LOG.info("Trigger modify event of {}.", fileName);
                     fileEventCallback.onModify();
                     lastModifyTimeMap.put(fileName, getCurrentTime());
                 }

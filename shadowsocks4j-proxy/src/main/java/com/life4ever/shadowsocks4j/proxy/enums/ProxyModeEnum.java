@@ -1,6 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.enums;
 
-public enum ShadowsocksProxyModeEnum {
+public enum ProxyModeEnum {
 
     LOCAL,
 

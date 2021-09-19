@@ -11,7 +11,7 @@ import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
 import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
-import com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum;
+import com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +49,8 @@ import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USE
 import static com.life4ever.shadowsocks4j.proxy.enums.CipherAlgorithmEnum.AES;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.LOCAL;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.REMOTE;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -82,7 +82,7 @@ public class ConfigUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigUtil.class);
 
-    private static ShadowsocksProxyModeEnum proxyMode;
+    private static ProxyModeEnum proxyMode;
 
     private static ScheduledFuture<?> scheduledFuture;
 
@@ -302,12 +302,12 @@ public class ConfigUtil {
         updateFuzzyDomainNameWhiteSet(Collections.emptySet(), false);
     }
 
-    public static SocketAddress getLocalServerSocketAddress() {
+    public static SocketAddress localServerSocketAddress() {
         ServerConfig localServerConfig = LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.get();
         return new InetSocketAddress(localServerConfig.getIp(), localServerConfig.getPort());
     }
 
-    public static SocketAddress getRemoteServerSocketAddress() {
+    public static SocketAddress remoteServerSocketAddress() {
         ServerConfig remoteServerConfig = REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.get();
         return new InetSocketAddress(remoteServerConfig.getIp(), remoteServerConfig.getPort());
     }
@@ -334,7 +334,7 @@ public class ConfigUtil {
         LOCK.unlock();
     }
 
-    public static ICipherFunction getCipherFunction() {
+    public static ICipherFunction cipherFunction() {
         return CIPHER_FUNCTION_ATOMIC_REFERENCE.get();
     }
 

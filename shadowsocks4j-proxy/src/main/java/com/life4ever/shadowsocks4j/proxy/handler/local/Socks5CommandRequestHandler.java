@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.getRemoteServerSocketAddress;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
+import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSocketAddress;
 
 @ChannelHandler.Sharable
 public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
@@ -78,7 +78,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                 });
 
         if (needRelayToRemoteServer(msg.dstAddr())) {
-            SocketAddress remoteServerInetSocketAddress = getRemoteServerSocketAddress();
+            SocketAddress remoteServerInetSocketAddress = remoteServerSocketAddress();
             bootstrap.connect(remoteServerInetSocketAddress)
                     .addListener((ChannelFutureListener) channelFuture -> {
                         Socks5CommandResponse socks5CommandResponse;

@@ -5,8 +5,8 @@ import com.life4ever.shadowsocks4j.proxy.service.IShadowsocks4jService;
 import com.life4ever.shadowsocks4j.proxy.service.impl.Shadowsocks4jLocalServiceImpl;
 import com.life4ever.shadowsocks4j.proxy.service.impl.Shadowsocks4jRemoteServiceImpl;
 
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.LOCAL;
-import static com.life4ever.shadowsocks4j.proxy.enums.ShadowsocksProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.LOCAL;
+import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.REMOTE;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateLocalMode;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.activateRemoteMode;
 

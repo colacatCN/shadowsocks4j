@@ -2,6 +2,9 @@ package com.life4ever.shadowsocks4j.proxy.util;
 
 public class StringUtil {
 
+    private StringUtil() {
+    }
+
     public static boolean isEmpty(CharSequence charSequence) {
         return charSequence == null || charSequence.length() == 0;
     }
