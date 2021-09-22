@@ -75,10 +75,10 @@ public class FileUtil {
 
     public static void startFileWatchService(List<FileEventCallback> fileEventCallbackList) {
         fileEventCallbackMap = fileEventCallbackList.stream()
-                .collect(Collectors.toMap(FileEventCallback::getFileName, fileEventCallback -> fileEventCallback));
+                .collect(Collectors.toMap(FileEventCallback::fileName, fileEventCallback -> fileEventCallback));
 
         lastModifyTimeMap = fileEventCallbackList.stream()
-                .collect(Collectors.toMap(FileEventCallback::getFileName, fileEventCallback -> 0L));
+                .collect(Collectors.toMap(FileEventCallback::fileName, fileEventCallback -> 0L));
 
         Thread thread = new Thread(() -> {
             try {

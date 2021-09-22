@@ -1,6 +1,5 @@
 package com.life4ever.shadowsocks4j.proxy.cipher;
 
-import com.life4ever.shadowsocks4j.proxy.enums.CipherAlgorithmEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
 
 import javax.crypto.BadPaddingException;
@@ -19,8 +18,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_ALGORITHM;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_ITERATION_COUNT;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherConfigConstant.SECRET_KEY_ALGORITHM;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherConfigConstant.SECRET_KEY_ITERATION_COUNT;
 
 public abstract class AbstractCipherFunction implements ICipherFunction {
 
@@ -32,23 +31,27 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    private final CipherAlgorithmEnum cipherAlgorithm;
+    private final String algorithm;
+
+    private final String mode;
 
     private final SecretKeySpec secretKeySpec;
 
-    protected AbstractCipherFunction(String password,
-                                     String salt,
-                                     int secretKeyLength,
-                                     CipherAlgorithmEnum cipherAlgorithm)
-            throws Shadowsocks4jProxyException {
-        this.cipherAlgorithm = cipherAlgorithm;
+    protected AbstractCipherFunction(
+            String algorithm,
+            String password,
+            String salt,
+            int secretKeyLength,
+            String mode) throws Shadowsocks4jProxyException {
+        this.algorithm = algorithm;
+        this.mode = mode;
         this.secretKeySpec = createSecretKeySpec(password, salt, secretKeyLength);
     }
 
     @Override
     public byte[] encrypt(byte[] content) throws Shadowsocks4jProxyException {
         try {
-            Cipher cipher = Cipher.getInstance(cipherAlgorithm.getMode());
+            Cipher cipher = Cipher.getInstance(mode);
 
             // 生成 nonce
             byte[] nonce = new byte[NONCE_LENGTH];
@@ -73,7 +76,7 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
     public byte[] decrypt(byte[] content) throws Shadowsocks4jProxyException {
         try {
             byte[] encryptedContent = Base64.getMimeDecoder().decode(content);
-            Cipher cipher = Cipher.getInstance(cipherAlgorithm.getMode());
+            Cipher cipher = Cipher.getInstance(mode);
 
             // 生成解密的 parameterSpec
             AlgorithmParameterSpec parameterSpec = createParameterSpecForDecryption(encryptedContent);
@@ -94,11 +97,11 @@ public abstract class AbstractCipherFunction implements ICipherFunction {
         return new byte[EXTRA_LENGTH];
     }
 
-    private SecretKeySpec createSecretKeySpec(String password, String salt, int length) throws Shadowsocks4jProxyException {
+    private SecretKeySpec createSecretKeySpec(String password, String salt, int secretKeyLength) throws Shadowsocks4jProxyException {
         try {
             SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(SECRET_KEY_ALGORITHM);
-            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), SECRET_KEY_ITERATION_COUNT, length);
-            return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), cipherAlgorithm.getName());
+            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt.getBytes(), SECRET_KEY_ITERATION_COUNT, secretKeyLength);
+            return new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), algorithm);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }

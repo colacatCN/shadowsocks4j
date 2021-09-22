@@ -13,7 +13,7 @@ public class Shadowsocks4jProxyFileCallbackImpl implements FileEventCallback {
     private static final Logger LOG = LoggerFactory.getLogger(Shadowsocks4jProxyFileCallbackImpl.class);
 
     @Override
-    public String getFileName() {
+    public String fileName() {
         return SHADOWSOCKS4J_PROXY_JSON;
     }
 

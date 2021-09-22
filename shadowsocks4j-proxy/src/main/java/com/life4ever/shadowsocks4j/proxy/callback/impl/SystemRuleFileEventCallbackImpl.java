@@ -22,7 +22,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updatePreciseDom
 public class SystemRuleFileEventCallbackImpl implements FileEventCallback {
 
     @Override
-    public String getFileName() {
+    public String fileName() {
         return SYSTEM_RULE_TXT;
     }
 

@@ -21,7 +21,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.updatePreciseDom
 public class UserRuleFileEventCallbackImpl implements FileEventCallback {
 
     @Override
-    public String getFileName() {
+    public String fileName() {
         return USER_RULE_TXT;
     }
 

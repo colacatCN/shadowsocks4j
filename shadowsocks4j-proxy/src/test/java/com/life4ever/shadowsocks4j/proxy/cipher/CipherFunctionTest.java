@@ -8,6 +8,9 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import static com.life4ever.shadowsocks4j.proxy.enums.CipherMethodEnum.AES_128_GCM;
+import static com.life4ever.shadowsocks4j.proxy.enums.CipherMethodEnum.CHACHA20_POLY1305;
+
 public class CipherFunctionTest {
 
     private static final String PASSWORD = "123456";
@@ -18,7 +21,7 @@ public class CipherFunctionTest {
 
     @Test
     public void testAes() throws Shadowsocks4jProxyException {
-        ICipherFunction cipherFunction = new AesCipherFunctionImpl(PASSWORD, SALT, 128);
+        ICipherFunction cipherFunction = new AesCipherFunctionImpl(PASSWORD, SALT, AES_128_GCM.getSecretKeyLength(), AES_128_GCM.getMode());
         byte[] encrypted = cipherFunction.encrypt(PLAIN_CONTENT);
         byte[] decrypted = cipherFunction.decrypt(encrypted);
         Assert.assertArrayEquals(PLAIN_CONTENT, decrypted);
@@ -26,7 +29,7 @@ public class CipherFunctionTest {
 
     @Test
     public void testChacha20() throws Shadowsocks4jProxyException {
-        ICipherFunction cipherFunction = new Chacha20CipherFunctionImpl(PASSWORD, SALT, 256);
+        ICipherFunction cipherFunction = new Chacha20CipherFunctionImpl(PASSWORD, SALT, CHACHA20_POLY1305.getSecretKeyLength(), CHACHA20_POLY1305.getMode());
         byte[] encrypted = cipherFunction.encrypt(PLAIN_CONTENT);
         byte[] decrypted = cipherFunction.decrypt(encrypted);
         Assert.assertArrayEquals(PLAIN_CONTENT, decrypted);

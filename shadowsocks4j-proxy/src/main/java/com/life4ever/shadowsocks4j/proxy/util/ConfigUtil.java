@@ -10,6 +10,7 @@ import com.life4ever.shadowsocks4j.proxy.config.CipherConfig;
 import com.life4ever.shadowsocks4j.proxy.config.PacConfig;
 import com.life4ever.shadowsocks4j.proxy.config.ServerConfig;
 import com.life4ever.shadowsocks4j.proxy.config.Shadowsocks4jProxyConfig;
+import com.life4ever.shadowsocks4j.proxy.enums.CipherMethodEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum;
 import com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum;
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
@@ -38,19 +39,17 @@ import java.util.regex.Matcher;
 
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_FUZZY_PATTERN;
 import static com.life4ever.shadowsocks4j.proxy.constant.AdBlockPlusFilterConstant.DOMAIN_NAME_PRECISE_PATTERN;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_CIPHER_METHOD;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.DEFAULT_SECRET_KEY_LENGTH;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.MAXIMUM_SECRET_KEY_LENGTH;
-import static com.life4ever.shadowsocks4j.proxy.constant.CipherAlgorithmConstant.SECRET_KEY_LENGTH_PATTERN;
+import static com.life4ever.shadowsocks4j.proxy.constant.CipherConfigConstant.AES;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_INTERVAL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.DEFAULT_SYSTEM_RULE_TXT_UPDATER_URL;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.SYSTEM_RULE_TXT_LOCATION;
 import static com.life4ever.shadowsocks4j.proxy.constant.ProxyConfigConstant.USER_RULE_TXT_LOCATION;
-import static com.life4ever.shadowsocks4j.proxy.enums.CipherAlgorithmEnum.AES;
+import static com.life4ever.shadowsocks4j.proxy.enums.CipherMethodEnum.AES_128_GCM;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.FUZZY;
 import static com.life4ever.shadowsocks4j.proxy.enums.MatcherModeEnum.PRECISE;
 import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.LOCAL;
 import static com.life4ever.shadowsocks4j.proxy.enums.ProxyModeEnum.REMOTE;
+import static com.life4ever.shadowsocks4j.proxy.util.EnumUtil.getEnumIgnoreCase;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.createRuleFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.loadConfigurationFile;
 import static com.life4ever.shadowsocks4j.proxy.util.FileUtil.startFileWatchService;
@@ -140,9 +139,6 @@ public class ConfigUtil {
 
         // 检查 method（可选）
         String method = newCipherConfig.getMethod();
-        if (StringUtil.isEmpty(method)) {
-            method = DEFAULT_CIPHER_METHOD;
-        }
 
         // 实例化 ICipherFunction 接口
         ICipherFunction cipherFunction = initializeCipherFunction(password, salt, method);
@@ -150,21 +146,14 @@ public class ConfigUtil {
     }
 
     private static ICipherFunction initializeCipherFunction(String password, String salt, String method) throws Shadowsocks4jProxyException {
-        Matcher matcher = SECRET_KEY_LENGTH_PATTERN.matcher(method);
-        int secretKeyLength = DEFAULT_SECRET_KEY_LENGTH;
-        if (matcher.find()) {
-            secretKeyLength = findSuitableLength(Integer.parseInt(matcher.group()));
+        CipherMethodEnum cipherMethod = getEnumIgnoreCase(CipherMethodEnum.class, method, AES_128_GCM);
+        ICipherFunction cipherFunction;
+        if (AES.equals(cipherMethod.getAlgorithm())) {
+            cipherFunction = new AesCipherFunctionImpl(password, salt, cipherMethod.getSecretKeyLength(), cipherMethod.getMode());
+        } else {
+            cipherFunction = new Chacha20CipherFunctionImpl(password, salt, cipherMethod.getSecretKeyLength(), cipherMethod.getMode());
         }
-        return method.toLowerCase().startsWith(AES.getName()) ?
-                new AesCipherFunctionImpl(password, salt, secretKeyLength) : new Chacha20CipherFunctionImpl(password, salt, MAXIMUM_SECRET_KEY_LENGTH);
-    }
-
-    private static int findSuitableLength(int length) {
-        int n = -1 >>> Integer.numberOfLeadingZeros(length - 1);
-        if (n < 0) {
-            return 1;
-        }
-        return n >= MAXIMUM_SECRET_KEY_LENGTH ? MAXIMUM_SECRET_KEY_LENGTH : n + 1;
+        return cipherFunction;
     }
 
     private static void updatePacConfig(PacConfig updatedPacConfig) throws Shadowsocks4jProxyException {
@@ -312,6 +301,10 @@ public class ConfigUtil {
         return new InetSocketAddress(remoteServerConfig.getIp(), remoteServerConfig.getPort());
     }
 
+    public static ICipherFunction cipherFunction() {
+        return CIPHER_FUNCTION_ATOMIC_REFERENCE.get();
+    }
+
     public static void activateLocalMode() throws Shadowsocks4jProxyException {
         proxyMode = LOCAL;
         updateShadowsocks4jProxyConfig();
@@ -332,10 +325,6 @@ public class ConfigUtil {
 
     public static void unlockWhiteList() {
         LOCK.unlock();
-    }
-
-    public static ICipherFunction cipherFunction() {
-        return CIPHER_FUNCTION_ATOMIC_REFERENCE.get();
     }
 
 }
