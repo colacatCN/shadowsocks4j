@@ -10,7 +10,7 @@
     "cipher": {
         "password": "123456",
         "salt": "654321",
-        "method": "aes-128-gcm"
+        "method": "aes_128_gcm"
     },
     "pac": {
         "enable-pac-mode": false,

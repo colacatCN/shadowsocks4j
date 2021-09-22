@@ -96,28 +96,34 @@ public class ConfigUtil {
 
     public static void updateShadowsocks4jProxyConfig() throws Shadowsocks4jProxyException {
         try {
-            // 加载配置文件
             Shadowsocks4jProxyConfig shadowsocks4jProxyConfig = loadConfigurationFile();
             LOG.info("Shadowsocks4j proxy configuration is {}.", shadowsocks4jProxyConfig);
 
-            // 更新 local-server（强制）
-            LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getLocalServerConfig())
-                    .orElseThrow(() -> new Shadowsocks4jProxyException("Local server configuration is null.")));
-
-            // 更新 remote-server（强制）
-            REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.set(Optional.ofNullable(shadowsocks4jProxyConfig.getRemoteServerConfig())
-                    .orElseThrow(() -> new Shadowsocks4jProxyException("Remote server configuration is null.")));
-
-            // 更新 cipher
-            updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
-
-            // 更新 pac
             if (LOCAL.equals(proxyMode)) {
+                updateLocalServerConfig(shadowsocks4jProxyConfig.getLocalServerConfig());
                 updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
+            } else {
+                updateRemoteServerConfig(shadowsocks4jProxyConfig.getRemoteServerConfig());
             }
+
+            updateCipherConfig(shadowsocks4jProxyConfig.getCipherConfig());
         } catch (IOException e) {
             throw new Shadowsocks4jProxyException(e.getMessage(), e);
         }
+    }
+
+    private static void updateLocalServerConfig(ServerConfig localServerConfig) throws Shadowsocks4jProxyException {
+        if (localServerConfig == null || localServerConfig.getIp() == null || localServerConfig.getPort() == null) {
+            throw new Shadowsocks4jProxyException("Local server configuration is null.");
+        }
+        LOCAL_SERVER_CONFIG_ATOMIC_REFERENCE.set(localServerConfig);
+    }
+
+    private static void updateRemoteServerConfig(ServerConfig remoteServerConfig) throws Shadowsocks4jProxyException {
+        if (remoteServerConfig == null || remoteServerConfig.getIp() == null || remoteServerConfig.getPort() == null) {
+            throw new Shadowsocks4jProxyException("Remote server configuration is null.");
+        }
+        REMOTE_SERVER_CONFIG_ATOMIC_REFERENCE.set(remoteServerConfig);
     }
 
     private static void updateCipherConfig(CipherConfig updatedCipherConfig) throws Shadowsocks4jProxyException {
