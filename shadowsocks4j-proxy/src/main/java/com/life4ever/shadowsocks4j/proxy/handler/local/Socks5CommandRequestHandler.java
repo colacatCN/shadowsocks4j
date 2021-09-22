@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSocketAddress;
@@ -33,6 +34,10 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSock
 public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<DefaultSocks5CommandRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
+
+    private static final AtomicReference<Bootstrap> REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE = new AtomicReference<>();
+
+    private static final AtomicReference<Bootstrap> LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE = new AtomicReference<>();
 
     private static volatile Socks5CommandRequestHandler instance;
 
@@ -55,62 +60,106 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         SocketAddress clientInetSocketAddress = ctx.channel().remoteAddress();
         LOG.info("Start channel @ {}.", clientInetSocketAddress);
 
-        relayToRemoteServer(ctx, msg);
+        relayTo(ctx, msg);
+    }
+
+    private void relayTo(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+        if (needRelayToRemoteServer(msg.dstAddr())) {
+            relayToRemoteServer(ctx, msg);
+        } else {
+            relayToLocalServer(ctx, msg);
+        }
     }
 
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
-        Bootstrap bootstrap = new Bootstrap();
-
-        bootstrap.group(clientWorkerGroup)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-
-                    @Override
-                    protected void initChannel(SocketChannel channel) throws Exception {
-                        ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addFirst(CipherEncryptHandler.getInstance());
-                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                        pipeline.addLast(CipherDecryptHandler.getInstance());
-                        pipeline.addLast(new RemoteToLocalHandler(ctx));
-                        pipeline.addLast(ExceptionCaughtHandler.getInstance());
+        SocketAddress remoteServerInetSocketAddress = remoteServerSocketAddress();
+        remoteServerBootstrap()
+                .connect(remoteServerInetSocketAddress)
+                .addListener((ChannelFutureListener) channelFuture -> {
+                    Socks5CommandResponse socks5CommandResponse;
+                    if (channelFuture.isSuccess()) {
+                        LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                        // 增加处理 remote 响应数据的 handler
+                        ChannelPipeline localToRemotePipeline = channelFuture.channel().pipeline();
+                        localToRemotePipeline.addLast(new ResponseMsgHandler(ctx));
+                        localToRemotePipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        // 增加处理 client 请求数据的 handler
+                        ChannelPipeline clientToLocalPipeline = ctx.channel().pipeline();
+                        clientToLocalPipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
+                        clientToLocalPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        // 返回 sock5 建立成功的响应
+                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
+                    } else {
+                        LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
                     }
-
+                    ctx.writeAndFlush(socks5CommandResponse);
                 });
+    }
 
-        if (needRelayToRemoteServer(msg.dstAddr())) {
-            SocketAddress remoteServerInetSocketAddress = remoteServerSocketAddress();
-            bootstrap.connect(remoteServerInetSocketAddress)
-                    .addListener((ChannelFutureListener) channelFuture -> {
-                        Socks5CommandResponse socks5CommandResponse;
-                        if (channelFuture.isSuccess()) {
-                            LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
-                            ChannelPipeline pipeline = ctx.channel().pipeline();
-                            pipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
-                            pipeline.addLast(ExceptionCaughtHandler.getInstance());
-                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
-                        } else {
-                            LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
-                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
+    private void relayToLocalServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+        SocketAddress targetServerInetSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
+        localServerBootstrap()
+                .connect(targetServerInetSocketAddress)
+                .addListener((ChannelFutureListener) channelFuture -> {
+                    Socks5CommandResponse socks5CommandResponse;
+                    if (channelFuture.isSuccess()) {
+                        LOG.info("Succeed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                        // 增加处理 target 响应数据的 handler
+                        ChannelPipeline localToTargetPipeline = channelFuture.channel().pipeline();
+                        localToTargetPipeline.addLast(new ResponseMsgHandler(ctx));
+                        localToTargetPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        // 增加处理 client 请求数据的 handler
+                        ChannelPipeline clientToLocalPipeline = ctx.channel().pipeline();
+                        clientToLocalPipeline.addLast(new LocalToTargetHandler(channelFuture));
+                        clientToLocalPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        // 返回 sock5 建立成功的响应
+                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
+                    } else {
+                        LOG.error("Failed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                        socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
+                    }
+                    ctx.writeAndFlush(socks5CommandResponse);
+                });
+    }
+
+    private Bootstrap remoteServerBootstrap() {
+        Bootstrap remoteServerBootstrap;
+        if ((remoteServerBootstrap = REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.get()) == null) {
+            remoteServerBootstrap = new Bootstrap()
+                    .group(clientWorkerGroup)
+                    .channel(NioSocketChannel.class)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+
+                        @Override
+                        protected void initChannel(SocketChannel channel) throws Exception {
+                            ChannelPipeline pipeline = channel.pipeline();
+                            pipeline.addFirst(CipherEncryptHandler.getInstance());
+                            pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                            pipeline.addLast(CipherDecryptHandler.getInstance());
                         }
-                        ctx.writeAndFlush(socks5CommandResponse);
+
                     });
-        } else {
-            SocketAddress targetServerInetSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
-            bootstrap.connect(targetServerInetSocketAddress)
-                    .addListener((ChannelFutureListener) channelFuture -> {
-                        Socks5CommandResponse socks5CommandResponse;
-                        if (channelFuture.isSuccess()) {
-                            LOG.info("Succeed to connect to target-server @ {}.", targetServerInetSocketAddress);
-                            ChannelPipeline pipeline = ctx.channel().pipeline();
-                            pipeline.addLast(ExceptionCaughtHandler.getInstance());
-                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
-                        } else {
-                            LOG.error("Failed to connect to target-server @ {}.", targetServerInetSocketAddress);
-                            socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
-                        }
-                        ctx.writeAndFlush(socks5CommandResponse);
-                    });
+            REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.set(remoteServerBootstrap);
         }
+        return remoteServerBootstrap;
+    }
+
+    private Bootstrap localServerBootstrap() {
+        Bootstrap localServerBootstrap;
+        if ((localServerBootstrap = LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.get()) == null) {
+            localServerBootstrap = new Bootstrap()
+                    .group(clientWorkerGroup)
+                    .channel(NioSocketChannel.class)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel channel) throws Exception {
+                            ChannelPipeline pipeline = channel.pipeline();
+                        }
+                    });
+            LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.set(localServerBootstrap);
+        }
+        return localServerBootstrap;
     }
 
     public static Socks5CommandRequestHandler getInstance(EventLoopGroup clientWorkerGroup) {

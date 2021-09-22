@@ -7,11 +7,11 @@ import io.netty.channel.ChannelOutboundInvoker;
 
 import java.util.Optional;
 
-public class RemoteToLocalHandler extends ChannelInboundHandlerAdapter {
+public class ResponseMsgHandler extends ChannelInboundHandlerAdapter {
 
     private final ChannelHandlerContext clientChannelHandlerContext;
 
-    public RemoteToLocalHandler(ChannelHandlerContext clientChannelHandlerContext) {
+    public ResponseMsgHandler(ChannelHandlerContext clientChannelHandlerContext) {
         this.clientChannelHandlerContext = clientChannelHandlerContext;
     }
 
