@@ -27,12 +27,22 @@ public class RemoteServerChannelInitializer extends ChannelInitializer<SocketCha
     @Override
     protected void initChannel(SocketChannel channel) throws Exception {
         ChannelPipeline pipeline = channel.pipeline();
+
+        // encoder
         pipeline.addFirst(CipherEncryptHandler.getInstance());
+
+        // decoder
         pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
         pipeline.addLast(CipherDecryptHandler.getInstance());
+
+        // heartbeat
         pipeline.addLast(new IdleStateHandler(SERVER_READ_IDLE_TIME, SERVER_WRITE_IDLE_TIME, SERVER_ALL_IDLE_TIME, TimeUnit.MILLISECONDS));
         pipeline.addLast(HeartbeatTimeoutHandler.getInstance());
-        pipeline.addLast(RemoteServerAddressHandler.getInstance(clientWorkerGroup));
+
+        // data
+        RemoteServerAddressHandler remoteServerAddressHandler = RemoteServerAddressHandler.getInstance();
+        RemoteServerAddressHandler.init(clientWorkerGroup);
+        pipeline.addLast(remoteServerAddressHandler);
     }
 
 }

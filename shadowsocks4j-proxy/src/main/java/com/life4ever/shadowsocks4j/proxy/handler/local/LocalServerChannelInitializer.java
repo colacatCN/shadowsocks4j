@@ -41,7 +41,9 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // command
         pipeline.addLast(new Socks5CommandRequestDecoder());
-        pipeline.addLast(Socks5CommandRequestHandler.getInstance(clientWorkerGroup));
+        Socks5CommandRequestHandler socks5CommandRequestHandler = Socks5CommandRequestHandler.getInstance();
+        Socks5CommandRequestHandler.init(clientWorkerGroup);
+        pipeline.addLast(socks5CommandRequestHandler);
     }
 
 }

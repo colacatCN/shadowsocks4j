@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSocketAddress;
@@ -35,16 +34,17 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
-    private static final AtomicReference<Bootstrap> REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE = new AtomicReference<>();
+    private static EventLoopGroup clientWorkerGroup;
 
-    private static final AtomicReference<Bootstrap> LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE = new AtomicReference<>();
+    private Socks5CommandRequestHandler() {
+    }
 
-    private static volatile Socks5CommandRequestHandler instance;
+    public static Socks5CommandRequestHandler getInstance() {
+        return Socks5CommandRequestHandlerHolder.INSTANCE;
+    }
 
-    private final EventLoopGroup clientWorkerGroup;
-
-    private Socks5CommandRequestHandler(EventLoopGroup clientWorkerGroup) {
-        this.clientWorkerGroup = clientWorkerGroup;
+    public static void init(EventLoopGroup eventLoopGroup) {
+        clientWorkerGroup = eventLoopGroup;
     }
 
     @Override
@@ -72,13 +72,13 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     }
 
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
-        SocketAddress remoteServerInetSocketAddress = remoteServerSocketAddress();
-        remoteServerBootstrap()
-                .connect(remoteServerInetSocketAddress)
+        SocketAddress remoteServerSocketAddress = remoteServerSocketAddress();
+        remoteBootstrapInstance()
+                .connect(remoteServerSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
                     if (channelFuture.isSuccess()) {
-                        LOG.info("Succeed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                        LOG.info("Succeed to connect to remote-server @ {}.", remoteServerSocketAddress);
                         // 增加处理 remote 响应数据的 handler
                         ChannelPipeline localToRemotePipeline = channelFuture.channel().pipeline();
                         localToRemotePipeline.addLast(new ResponseMsgHandler(ctx));
@@ -90,7 +90,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                         // 返回 sock5 建立成功的响应
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                     } else {
-                        LOG.error("Failed to connect to remote-server @ {}.", remoteServerInetSocketAddress);
+                        LOG.error("Failed to connect to remote-server @ {}.", remoteServerSocketAddress);
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
                     }
                     ctx.writeAndFlush(socks5CommandResponse);
@@ -98,13 +98,13 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
     }
 
     private void relayToLocalServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
-        SocketAddress targetServerInetSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
-        localServerBootstrap()
-                .connect(targetServerInetSocketAddress)
+        SocketAddress targetServerSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
+        localBootstrapInstance()
+                .connect(targetServerSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
                     if (channelFuture.isSuccess()) {
-                        LOG.info("Succeed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                        LOG.info("Succeed to connect to target-server @ {}.", targetServerSocketAddress);
                         // 增加处理 target 响应数据的 handler
                         ChannelPipeline localToTargetPipeline = channelFuture.channel().pipeline();
                         localToTargetPipeline.addLast(new ResponseMsgHandler(ctx));
@@ -116,61 +116,60 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                         // 返回 sock5 建立成功的响应
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                     } else {
-                        LOG.error("Failed to connect to target-server @ {}.", targetServerInetSocketAddress);
+                        LOG.error("Failed to connect to target-server @ {}.", targetServerSocketAddress);
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, msg.dstAddrType());
                     }
                     ctx.writeAndFlush(socks5CommandResponse);
                 });
     }
 
-    private Bootstrap remoteServerBootstrap() {
-        Bootstrap remoteServerBootstrap;
-        if ((remoteServerBootstrap = REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.get()) == null) {
-            remoteServerBootstrap = new Bootstrap()
-                    .group(clientWorkerGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChannelInitializer<SocketChannel>() {
+    private static class Socks5CommandRequestHandlerHolder {
 
-                        @Override
-                        protected void initChannel(SocketChannel channel) throws Exception {
-                            ChannelPipeline pipeline = channel.pipeline();
-                            pipeline.addFirst(CipherEncryptHandler.getInstance());
-                            pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                            pipeline.addLast(CipherDecryptHandler.getInstance());
-                        }
+        private static final Socks5CommandRequestHandler INSTANCE = new Socks5CommandRequestHandler();
 
-                    });
-            REMOTE_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.set(remoteServerBootstrap);
-        }
-        return remoteServerBootstrap;
     }
 
-    private Bootstrap localServerBootstrap() {
-        Bootstrap localServerBootstrap;
-        if ((localServerBootstrap = LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.get()) == null) {
-            localServerBootstrap = new Bootstrap()
-                    .group(clientWorkerGroup)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel channel) throws Exception {
-                            ChannelPipeline pipeline = channel.pipeline();
-                        }
-                    });
-            LOCAL_SERVER_BOOTSTRAP_ATOMIC_REFERENCE.set(localServerBootstrap);
-        }
-        return localServerBootstrap;
+    private static class RemoteBootstrapHolder {
+
+        private static final Bootstrap INSTANCE = new Bootstrap()
+                .group(clientWorkerGroup)
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    protected void initChannel(SocketChannel channel) throws Exception {
+                        ChannelPipeline pipeline = channel.pipeline();
+                        pipeline.addFirst(CipherEncryptHandler.getInstance());
+                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
+                        pipeline.addLast(CipherDecryptHandler.getInstance());
+                    }
+
+                });
+
     }
 
-    public static Socks5CommandRequestHandler getInstance(EventLoopGroup clientWorkerGroup) {
-        if (instance == null) {
-            synchronized (Socks5CommandRequestHandler.class) {
-                if (instance == null) {
-                    instance = new Socks5CommandRequestHandler(clientWorkerGroup);
-                }
-            }
-        }
-        return instance;
+    private static class LocalBootstrapHolder {
+
+        private static final Bootstrap INSTANCE = new Bootstrap()
+                .group(clientWorkerGroup)
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    protected void initChannel(SocketChannel channel) throws Exception {
+                        // do nothing
+                    }
+
+                });
+
+    }
+
+    private static Bootstrap remoteBootstrapInstance() {
+        return RemoteBootstrapHolder.INSTANCE;
+    }
+
+    private static Bootstrap localBootstrapInstance() {
+        return LocalBootstrapHolder.INSTANCE;
     }
 
 }

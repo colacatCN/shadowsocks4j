@@ -19,12 +19,17 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
     private static final int IPV6_ADDRESS_BYTES_LENGTH = 16;
 
-    private static volatile RemoteServerAddressHandler instance;
+    private static EventLoopGroup clientWorkerGroup;
 
-    private final EventLoopGroup clientWorkerGroup;
+    private RemoteServerAddressHandler() {
+    }
 
-    private RemoteServerAddressHandler(EventLoopGroup clientWorkerGroup) {
-        this.clientWorkerGroup = clientWorkerGroup;
+    public static RemoteServerAddressHandler getInstance() {
+        return RemoteServerAddressHandlerHolder.INSTANCE;
+    }
+
+    public static void init(EventLoopGroup eventLoopGroup) {
+        clientWorkerGroup = eventLoopGroup;
     }
 
     @Override
@@ -63,15 +68,10 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         return host;
     }
 
-    public static RemoteServerAddressHandler getInstance(EventLoopGroup clientWorkerGroup) {
-        if (instance == null) {
-            synchronized (RemoteServerAddressHandler.class) {
-                if (instance == null) {
-                    instance = new RemoteServerAddressHandler(clientWorkerGroup);
-                }
-            }
-        }
-        return instance;
+    private static class RemoteServerAddressHandlerHolder {
+
+        private static final RemoteServerAddressHandler INSTANCE = new RemoteServerAddressHandler();
+
     }
 
 }
