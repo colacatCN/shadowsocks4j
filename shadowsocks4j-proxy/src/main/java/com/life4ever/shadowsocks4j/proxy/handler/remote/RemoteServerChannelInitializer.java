@@ -15,13 +15,12 @@ import java.util.concurrent.TimeUnit;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_ALL_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_READ_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_WRITE_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.RemoteClientBootstrap.init;
 
 public class RemoteServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final EventLoopGroup clientWorkerGroup;
-
     public RemoteServerChannelInitializer(EventLoopGroup clientWorkerGroup) {
-        this.clientWorkerGroup = clientWorkerGroup;
+        init(clientWorkerGroup);
     }
 
     @Override
@@ -40,9 +39,7 @@ public class RemoteServerChannelInitializer extends ChannelInitializer<SocketCha
         pipeline.addLast(HeartbeatTimeoutHandler.getInstance());
 
         // data
-        RemoteServerAddressHandler remoteServerAddressHandler = RemoteServerAddressHandler.getInstance();
-        RemoteServerAddressHandler.init(clientWorkerGroup);
-        pipeline.addLast(remoteServerAddressHandler);
+        pipeline.addLast(RemoteServerAddressHandler.getInstance());
     }
 
 }

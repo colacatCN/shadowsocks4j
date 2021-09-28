@@ -101,6 +101,7 @@ public class ConfigUtil {
 
             if (LOCAL.equals(proxyMode)) {
                 updateLocalServerConfig(shadowsocks4jProxyConfig.getLocalServerConfig());
+                updateRemoteServerConfig(shadowsocks4jProxyConfig.getRemoteServerConfig());
                 updatePacConfig(shadowsocks4jProxyConfig.getPacConfig());
             } else {
                 updateRemoteServerConfig(shadowsocks4jProxyConfig.getRemoteServerConfig());

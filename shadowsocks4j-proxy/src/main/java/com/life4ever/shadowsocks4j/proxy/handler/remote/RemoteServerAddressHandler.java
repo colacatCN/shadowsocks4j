@@ -6,11 +6,11 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
@@ -19,17 +19,11 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
     private static final int IPV6_ADDRESS_BYTES_LENGTH = 16;
 
-    private static EventLoopGroup clientWorkerGroup;
-
     private RemoteServerAddressHandler() {
     }
 
     public static RemoteServerAddressHandler getInstance() {
         return RemoteServerAddressHandlerHolder.INSTANCE;
-    }
-
-    public static void init(EventLoopGroup eventLoopGroup) {
-        clientWorkerGroup = eventLoopGroup;
     }
 
     @Override
@@ -39,10 +33,11 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
         // 解析
         String host = parseHostString(byteBuf);
         int port = byteBuf.readShort();
+        SocketAddress targetServerSocketAddress = new InetSocketAddress(host, port);
 
         // 交由 RemoteToTargetHandler 处理
         ChannelPipeline pipeline = ctx.channel().pipeline();
-        pipeline.addLast(new RemoteToTargetHandler(clientWorkerGroup, new InetSocketAddress(host, port), ctx));
+        pipeline.addLast(new RemoteToTargetHandler(targetServerSocketAddress, ctx));
         pipeline.addLast(ExceptionCaughtHandler.getInstance());
         pipeline.remove(this);
         ctx.fireChannelRead(byteBuf);

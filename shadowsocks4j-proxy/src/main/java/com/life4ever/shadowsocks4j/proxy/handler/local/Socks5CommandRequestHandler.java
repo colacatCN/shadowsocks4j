@@ -1,20 +1,12 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
-import com.life4ever.shadowsocks4j.proxy.handler.common.CipherDecryptHandler;
-import com.life4ever.shadowsocks4j.proxy.handler.common.CipherEncryptHandler;
 import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest;
 import io.netty.handler.codec.socksx.v5.DefaultSocks5CommandResponse;
 import io.netty.handler.codec.socksx.v5.Socks5CommandResponse;
@@ -26,6 +18,8 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.LocalClientBootstrap.localToRemoteClientBootstrap;
+import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.LocalClientBootstrap.localToTargetClientBootstrap;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSocketAddress;
 
@@ -34,17 +28,11 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
     private static final Logger LOG = LoggerFactory.getLogger(Socks5CommandRequestHandler.class);
 
-    private static EventLoopGroup clientWorkerGroup;
-
     private Socks5CommandRequestHandler() {
     }
 
     public static Socks5CommandRequestHandler getInstance() {
         return Socks5CommandRequestHandlerHolder.INSTANCE;
-    }
-
-    public static void init(EventLoopGroup eventLoopGroup) {
-        clientWorkerGroup = eventLoopGroup;
     }
 
     @Override
@@ -57,8 +45,8 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
             throw new Shadowsocks4jProxyException("SOCKS command type is not CONNECT.");
         }
 
-        SocketAddress clientInetSocketAddress = ctx.channel().remoteAddress();
-        LOG.info("Start channel @ {}.", clientInetSocketAddress);
+        SocketAddress clientSocketAddress = ctx.channel().remoteAddress();
+        LOG.info("Start channel @ {}.", clientSocketAddress);
 
         relayTo(ctx, msg);
     }
@@ -67,13 +55,13 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         if (needRelayToRemoteServer(msg.dstAddr())) {
             relayToRemoteServer(ctx, msg);
         } else {
-            relayToLocalServer(ctx, msg);
+            relayToTargetServer(ctx, msg);
         }
     }
 
     private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         SocketAddress remoteServerSocketAddress = remoteServerSocketAddress();
-        remoteBootstrapInstance()
+        localToRemoteClientBootstrap()
                 .connect(remoteServerSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
@@ -97,9 +85,9 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                 });
     }
 
-    private void relayToLocalServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+    private void relayToTargetServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         SocketAddress targetServerSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
-        localBootstrapInstance()
+        localToTargetClientBootstrap()
                 .connect(targetServerSocketAddress)
                 .addListener((ChannelFutureListener) channelFuture -> {
                     Socks5CommandResponse socks5CommandResponse;
@@ -127,49 +115,6 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
 
         private static final Socks5CommandRequestHandler INSTANCE = new Socks5CommandRequestHandler();
 
-    }
-
-    private static class RemoteBootstrapHolder {
-
-        private static final Bootstrap INSTANCE = new Bootstrap()
-                .group(clientWorkerGroup)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-
-                    @Override
-                    protected void initChannel(SocketChannel channel) throws Exception {
-                        ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addFirst(CipherEncryptHandler.getInstance());
-                        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
-                        pipeline.addLast(CipherDecryptHandler.getInstance());
-                    }
-
-                });
-
-    }
-
-    private static class LocalBootstrapHolder {
-
-        private static final Bootstrap INSTANCE = new Bootstrap()
-                .group(clientWorkerGroup)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-
-                    @Override
-                    protected void initChannel(SocketChannel channel) throws Exception {
-                        // do nothing
-                    }
-
-                });
-
-    }
-
-    private static Bootstrap remoteBootstrapInstance() {
-        return RemoteBootstrapHolder.INSTANCE;
-    }
-
-    private static Bootstrap localBootstrapInstance() {
-        return LocalBootstrapHolder.INSTANCE;
     }
 
 }

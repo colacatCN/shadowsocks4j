@@ -15,13 +15,12 @@ import java.util.concurrent.TimeUnit;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_ALL_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_READ_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_WRITE_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.LocalClientBootstrap.init;
 
 public class LocalServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final EventLoopGroup clientWorkerGroup;
-
     public LocalServerChannelInitializer(EventLoopGroup clientWorkerGroup) {
-        this.clientWorkerGroup = clientWorkerGroup;
+        init(clientWorkerGroup);
     }
 
     @Override
@@ -41,9 +40,7 @@ public class LocalServerChannelInitializer extends ChannelInitializer<SocketChan
 
         // command
         pipeline.addLast(new Socks5CommandRequestDecoder());
-        Socks5CommandRequestHandler socks5CommandRequestHandler = Socks5CommandRequestHandler.getInstance();
-        Socks5CommandRequestHandler.init(clientWorkerGroup);
-        pipeline.addLast(socks5CommandRequestHandler);
+        pipeline.addLast(Socks5CommandRequestHandler.getInstance());
     }
 
 }
