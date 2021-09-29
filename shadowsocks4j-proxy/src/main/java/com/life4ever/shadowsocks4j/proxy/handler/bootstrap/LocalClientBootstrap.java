@@ -14,6 +14,9 @@ public class LocalClientBootstrap {
 
     private static EventLoopGroup clientWorkerGroup;
 
+    private LocalClientBootstrap() {
+    }
+
     public static Bootstrap getInstance() {
         return LocalClientBootstrapHolder.INSTANCE;
     }

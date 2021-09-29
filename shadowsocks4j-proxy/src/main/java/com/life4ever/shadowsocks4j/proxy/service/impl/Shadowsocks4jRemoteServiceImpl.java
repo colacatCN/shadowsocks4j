@@ -17,7 +17,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.remoteServerSock
 public class Shadowsocks4jRemoteServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jRemoteServiceImpl() {
-        super(REMOTE.name(), remoteServerSocketAddress());
+        super(REMOTE.name(), remoteServerSocketAddress(), DEFAULT_NUM_OF_SERVER_WORKER, DEFAULT_NUM_OF_CLIENT_WORKER);
         this.initialize();
     }
 

@@ -15,6 +15,10 @@ public abstract class AbstractShadowsocks4jService implements IShadowsocks4jServ
 
     protected final Logger log = LoggerFactory.getLogger(getClass());
 
+    protected static final int DEFAULT_NUM_OF_SERVER_WORKER = 4;
+
+    protected static final int DEFAULT_NUM_OF_CLIENT_WORKER = 4;
+
     private static final String BOSS_GROUP_THREAD_POOL_NAME = "netty-boss";
 
     private static final String SERVER_WORKER_GROUP_THREAD_POOL_NAME = "netty-server-worker";

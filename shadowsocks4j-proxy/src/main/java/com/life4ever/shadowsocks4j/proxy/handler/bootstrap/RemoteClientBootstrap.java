@@ -14,6 +14,9 @@ public class RemoteClientBootstrap {
 
     private static EventLoopGroup clientWorkerGroup;
 
+    private RemoteClientBootstrap() {
+    }
+
     public static Bootstrap getInstance() {
         return RemoteClientBootstrapHolder.INSTANCE;
     }

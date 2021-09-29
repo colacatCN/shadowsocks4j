@@ -17,7 +17,7 @@ import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.localServerSocke
 public class Shadowsocks4jLocalServiceImpl extends AbstractShadowsocks4jService {
 
     public Shadowsocks4jLocalServiceImpl() {
-        super(LOCAL.name(), localServerSocketAddress());
+        super(LOCAL.name(), localServerSocketAddress(), DEFAULT_NUM_OF_SERVER_WORKER, DEFAULT_NUM_OF_CLIENT_WORKER);
         this.initialize();
     }
 
