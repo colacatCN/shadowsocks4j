@@ -6,6 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,14 +51,16 @@ public class RemoteToTargetHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void connectToTargetServer(SocketAddress targetServerSocketAddress, ChannelHandlerContext localChannelHandlerContext) {
-        remoteClientBootstrap(localChannelHandlerContext)
+        remoteClientBootstrap()
                 .connect(targetServerSocketAddress)
-                .addListener((ChannelFutureListener) future -> {
-                    if (future.isSuccess()) {
+                .addListener((ChannelFutureListener) channelFuture -> {
+                    if (channelFuture.isSuccess()) {
                         lock.lock();
                         try {
                             LOG.info("Succeed to connect to target server @ {}.", targetServerSocketAddress);
-                            channelAtomicReference.set(future.channel());
+                            ChannelPipeline pipeline = channelFuture.channel().pipeline();
+                            pipeline.addLast(new TargetToRemoteHandler(localChannelHandlerContext));
+                            channelAtomicReference.set(channelFuture.channel());
                             condition.signal();
                         } finally {
                             lock.unlock();

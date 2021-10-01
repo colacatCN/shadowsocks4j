@@ -1,11 +1,7 @@
 package com.life4ever.shadowsocks4j.proxy.handler.bootstrap;
 
-import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
-import com.life4ever.shadowsocks4j.proxy.handler.remote.TargetToRemoteHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -25,15 +21,13 @@ public class RemoteClientBootstrap {
         clientWorkerGroup = eventLoopGroup;
     }
 
-    public static Bootstrap remoteClientBootstrap(ChannelHandlerContext localChannelHandlerContext) {
+    public static Bootstrap remoteClientBootstrap() {
         return getInstance()
                 .handler(new ChannelInitializer<SocketChannel>() {
 
                     @Override
                     protected void initChannel(SocketChannel channel) throws Exception {
-                        ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addLast(new TargetToRemoteHandler(localChannelHandlerContext));
-                        pipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        // do nothing
                     }
 
                 });

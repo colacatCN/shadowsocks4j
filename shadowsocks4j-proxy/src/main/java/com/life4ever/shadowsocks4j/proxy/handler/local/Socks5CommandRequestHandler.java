@@ -48,18 +48,18 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
         SocketAddress clientSocketAddress = ctx.channel().remoteAddress();
         LOG.info("Start channel @ {}.", clientSocketAddress);
 
-        relayTo(ctx, msg);
+        connectTo(ctx, msg);
     }
 
-    private void relayTo(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+    private void connectTo(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         if (needRelayToRemoteServer(msg.dstAddr())) {
-            relayToRemoteServer(ctx, msg);
+            connectToRemoteServer(ctx, msg);
         } else {
-            relayToTargetServer(ctx, msg);
+            connectToTargetServer(ctx, msg);
         }
     }
 
-    private void relayToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+    private void connectToRemoteServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         SocketAddress remoteServerSocketAddress = remoteServerSocketAddress();
         localToRemoteClientBootstrap()
                 .connect(remoteServerSocketAddress)
@@ -85,7 +85,7 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                 });
     }
 
-    private void relayToTargetServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
+    private void connectToTargetServer(ChannelHandlerContext ctx, DefaultSocks5CommandRequest msg) {
         SocketAddress targetServerSocketAddress = new InetSocketAddress(msg.dstAddr(), msg.dstPort());
         localToTargetClientBootstrap()
                 .connect(targetServerSocketAddress)
