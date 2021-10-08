@@ -1,7 +1,6 @@
 package com.life4ever.shadowsocks4j.proxy.handler.local;
 
 import com.life4ever.shadowsocks4j.proxy.exception.Shadowsocks4jProxyException;
-import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,6 +17,10 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.EXCEPTION_CAUGHT_HANDLER_NAME;
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.LOCAL_TO_REMOTE_HANDLER_NAME;
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.LOCAL_TO_TARGET_HANDLER_NAME;
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.RESPONSE_MSG_HANDLER_NAME;
 import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.LocalClientBootstrap.localToRemoteClientBootstrap;
 import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.LocalClientBootstrap.localToTargetClientBootstrap;
 import static com.life4ever.shadowsocks4j.proxy.util.ConfigUtil.needRelayToRemoteServer;
@@ -69,12 +72,10 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                         LOG.info("Succeed to connect to remote-server @ {}.", remoteServerSocketAddress);
                         // 增加处理 remote 响应数据的 handler
                         ChannelPipeline localToRemotePipeline = channelFuture.channel().pipeline();
-                        localToRemotePipeline.addLast(new ResponseMsgHandler(ctx));
-                        localToRemotePipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        localToRemotePipeline.addBefore(EXCEPTION_CAUGHT_HANDLER_NAME, RESPONSE_MSG_HANDLER_NAME, new ResponseMsgHandler(ctx));
                         // 增加处理 client 请求数据的 handler
                         ChannelPipeline clientToLocalPipeline = ctx.channel().pipeline();
-                        clientToLocalPipeline.addLast(new LocalToRemoteHandler(channelFuture, msg));
-                        clientToLocalPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        clientToLocalPipeline.addBefore(EXCEPTION_CAUGHT_HANDLER_NAME, LOCAL_TO_REMOTE_HANDLER_NAME, new LocalToRemoteHandler(channelFuture, msg));
                         // 返回 sock5 建立成功的响应
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                     } else {
@@ -95,12 +96,10 @@ public class Socks5CommandRequestHandler extends SimpleChannelInboundHandler<Def
                         LOG.info("Succeed to connect to target-server @ {}.", targetServerSocketAddress);
                         // 增加处理 target 响应数据的 handler
                         ChannelPipeline localToTargetPipeline = channelFuture.channel().pipeline();
-                        localToTargetPipeline.addLast(new ResponseMsgHandler(ctx));
-                        localToTargetPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        localToTargetPipeline.addBefore(EXCEPTION_CAUGHT_HANDLER_NAME, RESPONSE_MSG_HANDLER_NAME, new ResponseMsgHandler(ctx));
                         // 增加处理 client 请求数据的 handler
                         ChannelPipeline clientToLocalPipeline = ctx.channel().pipeline();
-                        clientToLocalPipeline.addLast(new LocalToTargetHandler(channelFuture));
-                        clientToLocalPipeline.addLast(ExceptionCaughtHandler.getInstance());
+                        clientToLocalPipeline.addBefore(EXCEPTION_CAUGHT_HANDLER_NAME, LOCAL_TO_TARGET_HANDLER_NAME, new LocalToTargetHandler(channelFuture));
                         // 返回 sock5 建立成功的响应
                         socks5CommandResponse = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS, msg.dstAddrType());
                     } else {

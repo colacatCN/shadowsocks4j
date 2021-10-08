@@ -2,6 +2,7 @@ package com.life4ever.shadowsocks4j.proxy.handler.remote;
 
 import com.life4ever.shadowsocks4j.proxy.handler.common.CipherDecryptHandler;
 import com.life4ever.shadowsocks4j.proxy.handler.common.CipherEncryptHandler;
+import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import com.life4ever.shadowsocks4j.proxy.handler.common.HeartbeatTimeoutHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_ALL_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_READ_IDLE_TIME;
 import static com.life4ever.shadowsocks4j.proxy.constant.IdleTimeConstant.SERVER_WRITE_IDLE_TIME;
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.EXCEPTION_CAUGHT_HANDLER_NAME;
 import static com.life4ever.shadowsocks4j.proxy.handler.bootstrap.RemoteClientBootstrap.init;
 
 public class RemoteServerChannelInitializer extends ChannelInitializer<SocketChannel> {
@@ -40,6 +42,9 @@ public class RemoteServerChannelInitializer extends ChannelInitializer<SocketCha
 
         // data
         pipeline.addLast(RemoteServerAddressHandler.getInstance());
+
+        // exception
+        pipeline.addLast(EXCEPTION_CAUGHT_HANDLER_NAME, ExceptionCaughtHandler.getInstance());
     }
 
 }

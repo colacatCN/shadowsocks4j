@@ -1,6 +1,5 @@
 package com.life4ever.shadowsocks4j.proxy.handler.remote;
 
-import com.life4ever.shadowsocks4j.proxy.handler.common.ExceptionCaughtHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -8,9 +7,14 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.socksx.v5.Socks5AddressType;
 import io.netty.util.NetUtil;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutorGroup;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.EXCEPTION_CAUGHT_HANDLER_NAME;
+import static com.life4ever.shadowsocks4j.proxy.constant.NettyHandlerConstant.REMOTE_TO_TARGET_HANDLER_NAME;
 
 @ChannelHandler.Sharable
 public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
@@ -18,6 +22,8 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
     private static final int IPV4_ADDRESS_BYTES_LENGTH = 4;
 
     private static final int IPV6_ADDRESS_BYTES_LENGTH = 16;
+
+    private final EventExecutorGroup businessGroup = new DefaultEventExecutorGroup(16);
 
     private RemoteServerAddressHandler() {
     }
@@ -37,8 +43,7 @@ public class RemoteServerAddressHandler extends ChannelInboundHandlerAdapter {
 
         // 交由 RemoteToTargetHandler 处理
         ChannelPipeline pipeline = ctx.channel().pipeline();
-        pipeline.addLast(new RemoteToTargetHandler(targetServerSocketAddress, ctx));
-        pipeline.addLast(ExceptionCaughtHandler.getInstance());
+        pipeline.addBefore(businessGroup, EXCEPTION_CAUGHT_HANDLER_NAME, REMOTE_TO_TARGET_HANDLER_NAME, new RemoteToTargetHandler(targetServerSocketAddress, ctx));
         pipeline.remove(this);
         ctx.fireChannelRead(byteBuf);
     }
